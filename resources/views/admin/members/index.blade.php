@@ -255,6 +255,13 @@
             <span class="fw-bold text-white" style="font-family:'Bangers',cursive; letter-spacing:2px; font-size:1.1rem;">👥 DAFTAR ANGGOTA</span>
         </div>
         <div class="card-toolbar d-flex align-items-center gap-2">
+            <form action="{{ route('admin.members.bulk-qr-regenerate') }}" method="POST"
+                  onsubmit="return confirm('Sinkronkan ulang semua QR Code anggota?\nIni akan meregenerasi QR untuk semua member.');">
+                @csrf
+                <button type="submit" class="btn-toolbar-export" style="background: #27ae60; color: #fff;">
+                    <i class="ki-duotone ki-arrows-circle fs-2"></i> Sinkronisasi QR
+                </button>
+            </form>
             <a href="{{ route('admin.export.members') }}" class="btn-toolbar-export">
                 <i class="ki-duotone ki-tablet-ks fs-2"></i> Export
             </a>
@@ -266,15 +273,37 @@
 
     <div class="card-body py-4 px-4">
 
+        {{-- Status Filter Tabs --}}
+        <div class="d-flex align-items-center gap-2 mb-4 flex-wrap">
+            @php
+                $tabs = [
+                    '' => ['label' => 'Semua', 'icon' => '👥'],
+                    'active' => ['label' => 'Aktif', 'icon' => '🟢'],
+                    'pending' => ['label' => '⏳ Pending', 'icon' => '⏳'],
+                    'inactive' => ['label' => 'Nonaktif', 'icon' => '🔴'],
+                ];
+            @endphp
+            @foreach($tabs as $key => $tab)
+                <a href="{{ route('admin.members.index', ['status' => $key] + (request('search') ? ['search' => request('search')] : [])) }}"
+                   class="btn btn-sm fw-bold {{ (request('status') == $key && !is_numeric(request('status'))) || (request('status') === null && $key === '') ? '' : '' }}"
+                   style="border-radius: 0; border: 3px solid var(--comic-dark); font-family: 'Fredoka One', cursive; font-size: 0.8rem; letter-spacing: 1px; padding: 8px 16px; {{ (request('status') == $key) ? 'background: var(--comic-dark); color: var(--comic-orange);' : 'background: var(--comic-cream); color: var(--comic-dark);' }}">
+                    {{ $tab['icon'] }} {{ $tab['label'] }}
+                </a>
+            @endforeach
+        </div>
+
         {{-- Comic Search Bar --}}
         <form method="GET" action="{{ route('admin.members.index') }}" class="comic-search-bar">
+            @if(request('status'))
+            <input type="hidden" name="status" value="{{ request('status') }}">
+            @endif
             <div class="row g-3 align-items-end">
                 <div class="col-md-8">
                     <label class="form-label">🔍 Pencarian</label>
                     <div class="comic-search-wrap">
                         <i class="ki-duotone ki-magnifier comic-search-icon"></i>
                         <input type="text" name="search" class="form-control form-control-solid"
-                            placeholder="Cari nama atau kode anggota..." value="{{ request('search') }}"/>
+                            placeholder="Cari nama, NIS, atau kode anggota..." value="{{ request('search') }}"/>
                     </div>
                 </div>
                 <div class="col-md-4">
@@ -291,12 +320,13 @@
                 <thead>
                     <tr class="text-start text-muted fw-bold fs-7 text-uppercase gs-0">
                         <th style="min-width:100px;">Kode</th>
-                        <th style="min-width:160px;">Nama</th>
+                        <th style="min-width:180px;">Nama</th>
+                        <th style="min-width:120px;">NIS/NIM</th>
                         <th style="min-width:70px;">QR</th>
                         <th style="min-width:100px;">Kelas</th>
                         <th style="min-width:120px;">WhatsApp</th>
                         <th style="min-width:80px;">Status</th>
-                        <th class="text-end" style="min-width:110px;">Aksi</th>
+                        <th class="text-end" style="min-width:150px;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="text-gray-600 fw-semibold">
@@ -323,6 +353,9 @@
                             </div>
                         </td>
                         <td>
+                            <span class="text-muted" style="font-size:0.82rem;">{{ $member->nis_nim ?? '-' }}</span>
+                        </td>
+                        <td>
                             @if($member->qr_code)
                                 <img src="{{ asset('storage/' . $member->qr_code) }}" alt="QR"
                                     style="width:40px; height:40px; object-fit:contain; border:2px solid #eee;"/>
@@ -342,31 +375,57 @@
                             <span class="text-muted" style="font-size:0.82rem;">{{ $member->whatsapp ?? '-' }}</span>
                         </td>
                         <td>
-                            <span class="badge badge-light-{{ $member->status->value === 'active' ? 'success' : 'secondary' }}"
-                                style="font-size:0.72rem;">
-                                {{ ucfirst($member->status->value) }}
-                            </span>
+                            @if($member->status->value === 'pending')
+                                <span class="badge badge-light-warning" style="font-size:0.72rem; border: 2px solid #f59e0b; background: rgba(245,158,11,0.15); color: #92400e;">
+                                    ⏳ Pending
+                                </span>
+                            @elseif($member->status->value === 'active')
+                                <span class="badge badge-light-success" style="font-size:0.72rem;">
+                                    🟢 Aktif
+                                </span>
+                            @else
+                                <span class="badge badge-light-secondary" style="font-size:0.72rem;">
+                                    🔴 Nonaktif
+                                </span>
+                            @endif
                         </td>
                         <td class="text-end">
                             <div class="action-group">
-                                <a href="{{ route('admin.members.show', $member) }}"
-                                    class="action-btn action-btn-detail" title="Detail">
-                                    <i class="ki-duotone ki-eye fs-5"></i> Detail
-                                </a>
-                                <button type="button" class="action-btn action-btn-edit"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#modal-edit-member"
-                                    data-member='@json($member)'
-                                    title="Edit">
-                                    <i class="ki-duotone ki-pencil fs-5"></i> Edit
-                                </button>
-                                <form method="POST" action="{{ route('admin.members.destroy', $member) }}" class="d-inline">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="action-btn action-btn-delete btn-delete" title="Hapus">
-                                        <i class="ki-duotone ki-trash fs-5"></i> Hapus
+                                @if($member->status->value === 'pending')
+                                    {{-- Approve / Reject for Pending --}}
+                                    <form method="POST" action="{{ route('admin.members.approve', $member) }}" class="d-inline">
+                                        @csrf
+                                        <button type="submit" class="action-btn" style="background: rgba(34,197,94,0.15); color: #15803d; border-color: #15803d; box-shadow: 3px 3px 0 #15803d;"
+                                            onclick="return confirm('Setujui pendaftaran {{ $member->name }}?');">
+                                            ✅ Setuju
+                                        </button>
+                                    </form>
+                                    <form method="POST" action="{{ route('admin.members.reject', $member) }}" class="d-inline">
+                                        @csrf
+                                        <button type="submit" class="action-btn action-btn-delete btn-delete">
+                                            ❌ Tolak
+                                        </button>
+                                    </form>
+                                @else
+                                    <a href="{{ route('admin.members.show', $member) }}"
+                                        class="action-btn action-btn-detail" title="Detail">
+                                        <i class="ki-duotone ki-eye fs-5"></i> Detail
+                                    </a>
+                                    <button type="button" class="action-btn action-btn-edit"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modal-edit-member"
+                                        data-member='@json($member)'
+                                        title="Edit">
+                                        <i class="ki-duotone ki-pencil fs-5"></i> Edit
                                     </button>
-                                </form>
+                                    <form method="POST" action="{{ route('admin.members.destroy', $member) }}" class="d-inline">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="action-btn action-btn-delete btn-delete" title="Hapus">
+                                            <i class="ki-duotone ki-trash fs-5"></i> Hapus
+                                        </button>
+                                    </form>
+                                @endif
                             </div>
                         </td>
                     </tr>

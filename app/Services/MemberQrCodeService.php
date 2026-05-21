@@ -52,4 +52,21 @@ class MemberQrCodeService
 
         return $count;
     }
+
+    /**
+     * Regenerate all member QR codes (bulk sync)
+     * Deletes old file and generates new one for every member
+     */
+    public function regenerateAll(): int
+    {
+        $count = 0;
+        Member::chunk(100, function ($members) use (&$count) {
+            foreach ($members as $member) {
+                $this->regenerate($member);
+                $count++;
+            }
+        });
+
+        return $count;
+    }
 }

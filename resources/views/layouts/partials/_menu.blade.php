@@ -73,6 +73,9 @@
                     <i class="ki-duotone ki-parcel fs-2"><span class="path1"></span><span class="path2"></span><span class="path3"></span></i>
                 </span>
                 <span class="menu-title">Peminjaman</span>
+                @if(isset($pendingBorrowingsCount) && $pendingBorrowingsCount > 0)
+                    <span class="badge badge-warning ms-2" style="font-size:0.65rem; border-radius:0 !important;">{{ $pendingBorrowingsCount }}</span>
+                @endif
             </a>
         </div>
 

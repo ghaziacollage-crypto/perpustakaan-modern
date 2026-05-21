@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Enums\MemberStatus;
 use App\Http\Requests\Members\StoreMemberRequest;
 use App\Http\Requests\Members\UpdateMemberRequest;
 use App\Models\Member;
@@ -34,13 +35,18 @@ class MemberController extends Controller
                 $builder
                     ->where('member_code', 'like', "%{$search}%")
                     ->orWhere('name', 'like', "%{$search}%")
+                    ->orWhere('nis_nim', 'like', "%{$search}%")
                     ->orWhere('whatsapp', 'like', "%{$search}%");
             });
         }
 
+        if ($status = $request->get('status')) {
+            $query->where('status', $status);
+        }
+
         $members = $query->latest()->paginate(10)->withQueryString();
 
-        return view('admin.members.index', compact('members'));
+        return view('admin.members.index', compact('members', 'status'));
     }
 
     public function store(StoreMemberRequest $request): RedirectResponse
@@ -120,6 +126,68 @@ class MemberController extends Controller
         return redirect()->back()->with('success', 'QR Code anggota berhasil digenerate ulang.');
     }
 
+    public function bulkRegenerateQr(): RedirectResponse
+    {
+        $count = $this->memberQr->regenerateAll();
+
+        return redirect()->route('admin.members.index')
+            ->with('success', "QR Code berhasil disinkronisasi untuk {$count} anggota.");
+    }
+
+    /**
+     * POST /admin/members/{member}/approve
+     * Approve a pending member registration
+     */
+    public function approve(Member $member): RedirectResponse
+    {
+        if ($member->status !== MemberStatus::Pending) {
+            return redirect()->route('admin.members.index')
+                ->with('error', 'Anggota sudah diproses.');
+        }
+
+        $member->update(['status' => MemberStatus::Active]);
+        $this->memberQr->generate($member);
+        $this->audit->log($member, 'approved', [
+            'status' => ['old' => 'pending', 'new' => 'active'],
+        ]);
+
+        return redirect()->route('admin.members.index')
+            ->with('success', "Anggota {$member->name} berhasil disetujui. QR Code telah digenerate.");
+    }
+
+    /**
+     * POST /admin/members/{member}/reject
+     * Reject and delete a pending member registration
+     */
+    public function reject(Member $member): RedirectResponse
+    {
+        if ($member->status !== MemberStatus::Pending) {
+            return redirect()->route('admin.members.index')
+                ->with('error', 'Anggota sudah diproses.');
+        }
+
+        $name = $member->name;
+
+        // Delete photo if exists
+        if ($member->photo) {
+            $this->memberPhoto->delete($member->photo);
+        }
+
+        // QR code should be null for pending, but clean up anyway
+        if ($member->qr_code) {
+            $this->memberQr->delete($member->qr_code);
+        }
+
+        $this->audit->logCustom($member, 'rejected', [
+            'rejected' => ['name' => $name, 'nis_nim' => $member->nis_nim],
+        ]);
+
+        $member->delete();
+
+        return redirect()->route('admin.members.index')
+            ->with('success', "Pendaftaran {$name} ditolak dan dihapus.");
+    }
+
     public function lookupByCode(Request $request): JsonResponse
     {
         $member = Member::where('member_code', $request->get('code'))->first();
@@ -136,6 +204,7 @@ class MemberController extends Controller
             'id' => $member->id,
             'member_code' => $member->member_code,
             'name' => $member->name,
+            'nis_nim' => $member->nis_nim,
             'class' => $member->class,
             'active_borrowings' => $member->activeBorrowings()->count(),
         ]);

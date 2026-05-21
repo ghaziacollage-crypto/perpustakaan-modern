@@ -50,4 +50,9 @@ class AuditService
             'deleted' => $model->getAttributes(),
         ]);
     }
+
+    public function logCustom(Model $model, string $action, array $changes): AuditLog
+    {
+        return $this->log($model, $action, $changes);
+    }
 }

@@ -53,13 +53,6 @@
         </div>
 
         <div class="menu-item">
-            <a class="menu-link {{ request()->routeIs('admin.scan.*') ? 'active' : '' }}" href="{{ route('admin.scan.index') }}">
-                <span class="menu-icon"><i class="ki-duotone ki-qrcode fs-2"><span class="path1"></span><span class="path2"></span></i></span>
-                <span class="menu-title">Scan QR</span>
-            </a>
-        </div>
-
-        <div class="menu-item">
             <a class="menu-link {{ request()->routeIs('admin.borrowings.*') ? 'active' : '' }}" href="{{ route('admin.borrowings.index') }}">
                 <span class="menu-icon"><i class="ki-duotone ki-arrow-up fs-2"><span class="path1"></span><span class="path2"></span></i></span>
                 <span class="menu-title">Peminjaman</span>
@@ -70,6 +63,13 @@
             <a class="menu-link {{ request()->routeIs('admin.returns.*') ? 'active' : '' }}" href="{{ route('admin.returns.index') }}">
                 <span class="menu-icon"><i class="ki-duotone ki-arrow-down fs-2"><span class="path1"></span><span class="path2"></span></i></span>
                 <span class="menu-title">Pengembalian</span>
+            </a>
+        </div>
+
+        <div class="menu-item">
+            <a class="menu-link {{ request()->routeIs('admin.returns.scan') ? 'active' : '' }}" href="{{ route('admin.returns.scan') }}">
+                <span class="menu-icon"><i class="ki-duotone ki-qrcode fs-2"><span class="path1"></span><span class="path2"></span></i></span>
+                <span class="menu-title">Scan Return</span>
             </a>
         </div>
 

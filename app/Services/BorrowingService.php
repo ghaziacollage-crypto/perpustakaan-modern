@@ -198,7 +198,7 @@ class BorrowingService
             return false;
         }
 
-        $daysLeft = $borrowing->due_date->diffInDays(now());
+        $daysLeft = (int) max(0, $borrowing->due_date->diffInDays(now()));
         $overdueDays = $borrowing->daysOverdue;
 
         if ($overdueDays > 0) {
@@ -326,6 +326,7 @@ class BorrowingService
                 'id' => $member->id,
                 'member_code' => $member->member_code,
                 'name' => $member->name,
+                'nis_nim' => $member->nis_nim,
                 'photo' => $member->photo ? asset('storage/'.$member->photo) : null,
                 'status' => $member->status->value,
                 'active_borrowings_count' => $activeCount,
@@ -372,6 +373,57 @@ class BorrowingService
     public function getDefaultDueDate(): Carbon
     {
         return now()->addDays($this->getLoanDuration());
+    }
+
+    // ── Transaction Code Lookup ───────────────────────────────────────────────
+
+    /**
+     * Find borrowing by transaction code (for return scan)
+     */
+    public function findByTransactionCode(string $code): array
+    {
+        $borrowing = Borrowing::with(['member', 'details.book'])
+            ->where('transaction_code', $code)
+            ->first();
+
+        if (! $borrowing) {
+            return ['success' => false, 'error' => 'Transaksi tidak ditemukan.'];
+        }
+
+        $isOverdue = $borrowing->isOverdue();
+        $daysLeft = $isOverdue
+            ? -$borrowing->daysOverdue()
+            : (int) max(0, $borrowing->due_date->diffInDays(now()));
+
+        return [
+            'success' => true,
+            'data' => [
+                'id' => $borrowing->id,
+                'transaction_code' => $borrowing->transaction_code,
+                'loan_date' => $borrowing->loan_date->format('Y-m-d'),
+                'due_date' => $borrowing->due_date->format('Y-m-d'),
+                'return_date' => $borrowing->return_date?->format('Y-m-d'),
+                'status' => $borrowing->status->value,
+                'is_overdue' => $isOverdue,
+                'days_left' => $daysLeft,
+                'member' => [
+                    'id' => $borrowing->member->id,
+                    'member_code' => $borrowing->member->member_code,
+                    'name' => $borrowing->member->name,
+                    'nis_nim' => $borrowing->member->nis_nim,
+                    'class' => $borrowing->member->class,
+                    'photo' => $borrowing->member->photo ? asset('storage/'.$borrowing->member->photo) : null,
+                ],
+                'books' => $borrowing->details->map(fn ($d) => [
+                    'id' => $d->id,
+                    'title' => $d->book->title,
+                    'author' => $d->book->author,
+                    'book_code' => $d->book->book_code,
+                    'cover' => $d->book->cover ? asset('storage/'.$d->book->cover) : null,
+                    'status' => $d->status->value,
+                ])->toArray(),
+            ],
+        ];
     }
 
     // ── Private ───────────────────────────────────────────────────────────────
@@ -421,6 +473,158 @@ class BorrowingService
         $message .= "⏰ Kembali: {$borrowing->due_date->format('d M Y')}\n\n";
         $message .= "📕 Buku: {$borrowing->details->count()} item\n";
         $message .= 'Silakan cek ke perpustakaan untuk info lebih lanjut.';
+
+        $this->whatsApp?->sendMessage($member, $member->whatsapp, $message);
+    }
+
+    // ── Pending Borrowing (for scan workflow) ────────────────────────────────
+
+    /**
+     * Create a pending borrowing request (after member + books scanned at kiosk)
+     * Books are NOT deducted from stock yet — only after admin approval
+     */
+    public function createPending(Member $member, array $bookIds, ?string $notes = null): Borrowing
+    {
+        // Validate member first
+        $this->validateMember($member);
+
+        // Normalize and dedupe book IDs
+        $bookIds = array_values(array_unique($bookIds));
+
+        if (empty($bookIds)) {
+            throw ValidationException::withMessages(['book_ids' => 'Pilih setidaknya satu buku.']);
+        }
+
+        // Check remaining slots
+        $remainingSlots = $this->getRemainingSlots($member);
+        if (count($bookIds) > $remainingSlots) {
+            throw ValidationException::withMessages([
+                'book_ids' => "Sisa slot peminjaman hanya {$remainingSlots} buku. Kurangi jumlah buku yang dipinjam.",
+            ]);
+        }
+
+        return DB::transaction(function () use ($member, $bookIds, $notes) {
+            // Lock books for update to prevent race conditions
+            $books = Book::query()
+                ->whereIn('id', $bookIds)
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
+
+            if ($books->count() !== count($bookIds)) {
+                $notFoundIds = array_diff($bookIds, $books->pluck('id')->toArray());
+                throw ValidationException::withMessages([
+                    'book_ids' => 'Sebagian buku tidak ditemukan (ID: '.implode(', ', $notFoundIds).').',
+                ]);
+            }
+
+            // Validate each book
+            foreach ($books as $book) {
+                $this->validateBook($book);
+            }
+
+            // Final check: total borrowed after this transaction
+            $newTotal = $this->getActiveBorrowingsCount($member) + count($bookIds);
+            if ($newTotal > self::MAX_BORROWINGS_PER_MEMBER) {
+                throw ValidationException::withMessages([
+                    'book_ids' => "Melebihi batas maksimal peminjaman. Sisa slot: {$remainingSlots} buku.",
+                ]);
+            }
+
+            // Generate transaction code
+            $transactionCode = $this->generateTransactionCode();
+
+            // Create borrowing record with status PENDING
+            $borrowing = Borrowing::create([
+                'transaction_code' => $transactionCode,
+                'member_id' => $member->id,
+                'user_id' => null, // No admin yet — approved later
+                'loan_date' => now()->toDateString(),
+                'due_date' => now()->addDays($this->getLoanDuration())->toDateString(),
+                'status' => BorrowingStatus::Pending,
+                'notes' => $notes,
+            ]);
+
+            // Create borrowing details (NO stock decrement yet)
+            foreach ($books as $book) {
+                BorrowingDetail::create([
+                    'borrowing_id' => $borrowing->id,
+                    'book_id' => $book->id,
+                    'status' => BorrowingDetailStatus::Borrowed,
+                ]);
+            }
+
+            return $borrowing->load(['member', 'details.book']);
+        });
+    }
+
+    /**
+     * Approve a pending borrowing — changes status to Active and decrements stock
+     */
+    public function approve(Borrowing $borrowing, int $approvedByUserId): Borrowing
+    {
+        if ($borrowing->status !== BorrowingStatus::Pending) {
+            throw new Exception('Hanya peminjaman dengan status Pending yang bisa disetujui.');
+        }
+
+        return DB::transaction(function () use ($borrowing, $approvedByUserId) {
+            $borrowing->load(['details.book']);
+
+            // Update borrowing
+            $borrowing->update([
+                'user_id' => $approvedByUserId,
+                'status' => BorrowingStatus::Active,
+            ]);
+
+            // Decrement stock for each book
+            foreach ($borrowing->details as $detail) {
+                $detail->book->decrement('stock');
+                if ($detail->book->stock <= 0) {
+                    $detail->book->update(['status' => BookStatus::Unavailable]);
+                }
+            }
+
+            // Send notification
+            $this->sendBorrowedNotification($borrowing->member, $borrowing->refresh());
+
+            return $borrowing->refresh();
+        });
+    }
+
+    /**
+     * Reject a pending borrowing — removes the borrowing record
+     */
+    public function reject(Borrowing $borrowing): void
+    {
+        if ($borrowing->status !== BorrowingStatus::Pending) {
+            throw new Exception('Hanya peminjaman dengan status Pending yang bisa ditolak.');
+        }
+
+        DB::transaction(function () use ($borrowing) {
+            // Load member untuk notifikasi
+            $borrowing->load('member');
+
+            // Send rejection notification
+            $this->sendRejectionNotification($borrowing->member, $borrowing);
+
+            // Delete borrowing details first
+            $borrowing->details()->delete();
+            // Delete borrowing
+            $borrowing->delete();
+        });
+    }
+
+    private function sendRejectionNotification(Member $member, Borrowing $borrowing): void
+    {
+        if (! $member->whatsapp) {
+            return;
+        }
+
+        $message = "📚 Hai {$member->name}!\n";
+        $message .= "Maaf, pengajuan peminjaman Anda ditolak oleh admin.\n\n";
+        $message .= "📋 Kode: {$borrowing->transaction_code}\n";
+        $message .= "📅 Tanggal pengajuan: {$borrowing->created_at->format('d M Y H:i')}\n\n";
+        $message .= "Silakan hubungi perpustakaan untuk informasi lebih lanjut.";
 
         $this->whatsApp?->sendMessage($member, $member->whatsapp, $message);
     }

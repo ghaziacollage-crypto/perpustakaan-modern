@@ -129,6 +129,7 @@ class BorrowingApiController extends Controller
                     'id' => $borrowing->member->id,
                     'name' => $borrowing->member->name,
                     'member_code' => $borrowing->member->member_code,
+                    'nis_nim' => $borrowing->member->nis_nim,
                     'photo' => $borrowing->member->photo ? asset('storage/'.$borrowing->member->photo) : null,
                 ],
                 'books' => $borrowing->details->map(fn ($d) => [
@@ -188,6 +189,65 @@ class BorrowingApiController extends Controller
     }
 
     /**
+     * GET /api/borrowings/by-code?code={transaction_code}
+     * Lookup borrowing by transaction_code (no auth required — used by return scan)
+     */
+    public function lookupByTransactionCode(Request $request): JsonResponse
+    {
+        $code = $request->query('code');
+
+        if (! $code) {
+            return response()->json(['success' => false, 'error' => 'Kode transaksi diperlukan.'], 400);
+        }
+
+        $borrowing = \App\Models\Borrowing::with(['member', 'details.book'])
+            ->where('transaction_code', $code)
+            ->first();
+
+        if (! $borrowing) {
+            return response()->json(['success' => false, 'error' => 'Peminjaman tidak ditemukan.'], 404);
+        }
+
+        // Only show borrowings that still have unreturned books
+        $hasUnreturned = $borrowing->details()->where('status', 'borrowed')->exists();
+        if (! $hasUnreturned) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Semua buku pada peminjaman ini sudah dikembalikan.',
+            ], 410);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'id' => $borrowing->id,
+                'transaction_code' => $borrowing->transaction_code,
+                'loan_date' => $borrowing->loan_date->format('d M Y'),
+                'due_date' => $borrowing->due_date->format('d M Y'),
+                'return_date' => $borrowing->return_date?->format('d M Y'),
+                'status' => $borrowing->status->value,
+                'is_overdue' => $borrowing->isOverdue(),
+                'days_overdue' => $borrowing->daysOverdue(),
+                'member' => [
+                    'id' => $borrowing->member->id,
+                    'name' => $borrowing->member->name,
+                    'member_code' => $borrowing->member->member_code,
+                    'nis_nim' => $borrowing->member->nis_nim,
+                ],
+                'books' => $borrowing->details->map(fn ($d) => [
+                    'id' => $d->id,
+                    'title' => $d->book->title,
+                    'book_code' => $d->book->book_code,
+                    'author' => $d->book->author,
+                    'cover' => $d->book->cover_url,
+                    'status' => $d->status->value,
+                    'returned_at' => $d->returned_at?->format('d M Y'),
+                ]),
+            ],
+        ]);
+    }
+
+    /**
      * POST /api/borrowings/{id}/remind
      * Send reminder
      */
@@ -204,10 +264,58 @@ class BorrowingApiController extends Controller
     private function getStatusLabel(Borrowing $borrowing): string
     {
         return match ($borrowing->status->value) {
+            'pending' => 'Menunggu Verifikasi',
             'active' => $borrowing->isOverdue() ? 'Terlambat' : 'Aktif',
             'returned' => 'Dikembalikan',
             'late' => 'Dikembalikan (Terlambat)',
             default => ucfirst($borrowing->status->value),
         };
+    }
+
+    /**
+     * POST /api/borrowings/{id}/approve
+     * Approve a pending borrowing (admin action)
+     */
+    public function approve(Borrowing $borrowing): JsonResponse
+    {
+        try {
+            $borrowing = $this->borrowingService->approve($borrowing, auth()->id());
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Peminjaman berhasil disetujui.',
+                'data' => [
+                    'id' => $borrowing->id,
+                    'transaction_code' => $borrowing->transaction_code,
+                    'status' => $borrowing->status->value,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    /**
+     * POST /api/borrowings/{id}/reject
+     * Reject a pending borrowing (admin action)
+     */
+    public function reject(Borrowing $borrowing): JsonResponse
+    {
+        try {
+            $this->borrowingService->reject($borrowing);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Peminjaman ditolak dan dihapus.',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+            ], 422);
+        }
     }
 }

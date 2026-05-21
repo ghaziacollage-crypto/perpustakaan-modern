@@ -78,4 +78,28 @@ class BorrowingLookupController extends Controller
             ],
         ]);
     }
+
+    /**
+     * GET /admin/borrowings/lookup-by-code?code={transactionCode}
+     * Lookup borrowing by transaction code for return scan — returns JSON
+     */
+    public function lookupByTransactionCode(Request $request): JsonResponse
+    {
+        $code = $request->query('code');
+
+        if (! $code) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Kode transaksi diperlukan.',
+            ], 400);
+        }
+
+        $result = $this->borrowingService->findByTransactionCode($code);
+
+        if (! $result['success']) {
+            return response()->json($result, 404);
+        }
+
+        return response()->json($result);
+    }
 }

@@ -99,4 +99,13 @@ class Borrowing extends Model
     {
         return $this->details()->where('status', BorrowingDetailStatus::Borrowed)->count() === 0;
     }
+
+    /**
+     * QR code return — format: RET-{transaction_code}
+     * Printed on member's return slip, scanned by admin at return counter
+     */
+    public function getReturnCodeAttribute(): string
+    {
+        return 'RET-' . $this->transaction_code;
+    }
 }

@@ -11,7 +11,9 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ExportController;
 use App\Http\Controllers\Admin\FineController;
 use App\Http\Controllers\Admin\HeroSlideController;
-use App\Http\Controllers\Admin\MemberController;
+use App\Http\Controllers\Admin\MemberController as AdminMemberController;
+use App\Http\Controllers\MemberController;
+use App\Http\Controllers\ScanController;
 use App\Http\Controllers\Admin\QrScanController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\ReturnController;
@@ -28,6 +30,16 @@ Route::get('/', [LandingPageController::class, 'index'])->name('landing.home');
 Route::get('/books', [LandingPageController::class, 'books'])->name('landing.books');
 Route::get('/categories', [LandingPageController::class, 'categories'])->name('landing.categories');
 Route::get('/books/{book}', [LandingPageController::class, 'showBook'])->name('landing.books.show');
+Route::get('/member', [MemberController::class, 'index'])->name('member.index');
+Route::get('/member/register', [MemberController::class, 'showRegisterForm'])->name('member.register');
+Route::post('/member/register', [MemberController::class, 'register'])->name('member.register.store');
+Route::get('/member/lookup', [MemberController::class, 'lookup'])->name('member.lookup');
+Route::get('/member/dashboard', [MemberController::class, 'dashboard'])->name('member.dashboard');
+Route::get('/member/books', [MemberController::class, 'selectBook'])->name('member.books');
+Route::get('/member/borrowings', [MemberController::class, 'myBorrowings'])->name('member.borrowings');
+Route::post('/member/borrow', [MemberController::class, 'requestBorrow'])->name('member.borrow');
+Route::post('/member/borrow/{id}/cancel', [MemberController::class, 'cancelBorrow'])->name('member.borrow.cancel');
+Route::get('/member/borrowings/{id}/return-qr', [MemberController::class, 'returnQr'])->name('member.return-qr');
 
 Route::get('/login-redirect', function () {
     if (Auth::check()) {
@@ -36,6 +48,9 @@ Route::get('/login-redirect', function () {
 
     return redirect()->route('login');
 })->name('home');
+
+// ── Kiosk Scan Page (perpustakaan counter tablet) ──
+Route::get('/scan', [ScanController::class, 'index'])->name('scan.kiosk');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
@@ -55,11 +70,14 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::post('books/bulk-qr', [BookController::class, 'bulkGenerateQr'])->name('books.bulk-qr');
     Route::get('books/bulk-qr/print', [BookController::class, 'bulkPrintQr'])->name('books.bulk-qr.print');
     Route::get('books/lookup', [BookController::class, 'lookupByCode'])->name('books.lookup');
-    Route::resource('members', MemberController::class)->except(['create', 'edit', 'show']);
-    Route::get('members/{member}', [MemberController::class, 'show'])->name('members.show');
-    Route::get('members/{member}/print', [MemberController::class, 'printCard'])->name('members.print-card');
-    Route::post('members/{member}/qr-code', [MemberController::class, 'regenerateQr'])->name('members.regenerate-qr');
-    Route::get('members/lookup', [MemberController::class, 'lookupByCode'])->name('members.lookup');
+    Route::resource('members', AdminMemberController::class)->except(['create', 'edit', 'show']);
+    Route::get('members/{member}', [AdminMemberController::class, 'show'])->name('members.show');
+    Route::get('members/{member}/print', [AdminMemberController::class, 'printCard'])->name('members.print-card');
+    Route::post('members/{member}/qr-code', [AdminMemberController::class, 'regenerateQr'])->name('members.regenerate-qr');
+    Route::post('members/bulk-qr-regenerate', [AdminMemberController::class, 'bulkRegenerateQr'])->name('members.bulk-qr-regenerate');
+    Route::post('members/{member}/approve', [AdminMemberController::class, 'approve'])->name('members.approve');
+    Route::post('members/{member}/reject', [AdminMemberController::class, 'reject'])->name('members.reject');
+    Route::get('members/lookup', [AdminMemberController::class, 'lookupByCode'])->name('members.lookup');
     Route::resource('categories', CategoryController::class)->except(['show']);
     Route::resource('users', UserController::class);
 
@@ -70,6 +88,8 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::get('borrowings', [BorrowingController::class, 'index'])->name('borrowings.index');
     Route::get('borrowings/create', [BorrowingController::class, 'create'])->name('borrowings.create');
     Route::post('borrowings', [BorrowingController::class, 'store'])->name('borrowings.store');
+    Route::post('borrowings/{borrowing}/approve', [BorrowingController::class, 'approve'])->name('borrowings.approve');
+    Route::post('borrowings/{borrowing}/reject', [BorrowingController::class, 'reject'])->name('borrowings.reject');
     Route::post('borrowings/{borrowing}/remind', [BorrowingController::class, 'remind'])->name('borrowings.remind');
     Route::get('borrowings/{borrowing}/receipt', [BorrowingController::class, 'receipt'])->name('borrowings.receipt');
     Route::get('borrowings/{borrowing}/receipt/pdf', [BorrowingController::class, 'receiptPdf'])->name('borrowings.receipt.pdf');
@@ -78,6 +98,8 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::get('borrowings/lookup-member', [BorrowingLookupController::class, 'lookupMember'])
         ->withoutMiddleware(['auth', 'verified']);
     Route::get('borrowings/lookup-book', [BorrowingLookupController::class, 'lookupBook'])
+        ->withoutMiddleware(['auth', 'verified']);
+    Route::get('borrowings/lookup-by-code', [BorrowingLookupController::class, 'lookupByTransactionCode'])
         ->withoutMiddleware(['auth', 'verified']);
 
     Route::get('scan', [QrScanController::class, 'index'])->name('scan.index');
@@ -91,6 +113,7 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::get('audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
 
     Route::get('returns', [ReturnController::class, 'index'])->name('returns.index');
+    Route::get('returns/scan', [ReturnController::class, 'scanReturn'])->name('returns.scan');
     Route::post('returns/{borrowing}', [ReturnController::class, 'store'])->name('returns.store');
 
     Route::get('settings', [SettingController::class, 'index'])->name('settings.index');

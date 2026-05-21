@@ -16,401 +16,524 @@
 @endsection
 
 @push('vendor-js')
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="{{ asset('vendor/qrcode/html5-qrcode.min.js') }}"></script>
 @endpush
 
 @push('custom-css')
 <style>
-.return-card {
-    border: 3px solid var(--comic-dark) !important;
-    box-shadow: 5px 5px 0 var(--comic-dark) !important;
-    border-radius: 0 !important;
+.scan-return-body {
+    display: flex;
+    gap: 24px;
+    min-height: 520px;
+    padding: 20px;
 }
-.return-card .card-header {
-    background: var(--comic-dark) !important;
-    border-bottom: 3px solid var(--comic-orange) !important;
-}
-.return-card .card-header .card-title {
-    font-family: 'Bangers', cursive !important;
-    letter-spacing: 2px !important;
-    color: var(--comic-orange) !important;
-    font-size: 1.1rem !important;
-}
-.return-row:hover { background: rgba(255,107,53,0.05) !important; }
-.return-member-avatar {
-    width: 38px; height: 38px;
-    background: var(--comic-cream);
-    border: 2px solid var(--comic-dark);
-    display: flex; align-items: center; justify-content: center;
-    font-family: 'Bangers', cursive;
-    font-size: 1rem;
-    color: var(--comic-dark);
+.scan-return-left {
+    width: 42%;
     flex-shrink: 0;
 }
-.due-chip {
-    display: inline-flex;
-    flex-direction: column;
-    align-items: flex-start;
+.scan-return-right {
+    flex: 1;
+    overflow-y: auto;
 }
-.due-chip-main {
+.scan-reader-box {
+    border: 4px solid var(--comic-dark);
+    box-shadow: 6px 6px 0 var(--comic-dark);
+    background: #000;
+    min-height: 320px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+}
+.camera-select-wrap {
+    border: 3px solid var(--comic-dark);
+    box-shadow: 3px 3px 0 var(--comic-dark);
+    padding: 12px;
+    background: #fff;
+    margin-bottom: 12px;
+}
+.scan-status {
     font-family: 'Fredoka One', cursive;
-    font-size: 0.82rem;
-    font-weight: 900;
+    font-size: 0.85rem;
+    text-align: center;
+    padding: 8px;
+    border: 3px solid var(--comic-dark);
+    box-shadow: 3px 3px 0 var(--comic-dark);
+    background: #fff;
 }
-.due-chip-late {
-    font-family: 'Fredoka One', cursive;
-    font-size: 0.65rem;
-    font-weight: 900;
-    color: var(--comic-red);
+.scan-manual-wrap {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
 }
-.status-badge-ret {
-    font-size:0.72rem !important;
-    border-radius:0 !important;
-    font-weight:900 !important;
-    border:2px solid currentColor !important;
-}
-.status-active { border-color: var(--comic-blue) !important; color: var(--comic-blue) !important; background: rgba(78,205,196,0.08) !important; }
-.status-late   { border-color: var(--comic-red) !important; color: var(--comic-red) !important; background: rgba(255,51,102,0.08) !important; }
-.status-returned { border-color: var(--comic-green) !important; color: var(--comic-green) !important; background: rgba(0,200,150,0.08) !important; }
-.btn-process {
-    background: var(--comic-orange) !important;
-    border: 2px solid var(--comic-dark) !important;
-    box-shadow: 3px 3px 0 var(--comic-dark) !important;
-    color: #fff !important;
+.scan-manual-wrap input {
+    flex: 1;
+    border: 3px solid var(--comic-dark) !important;
     border-radius: 0 !important;
-    font-family: 'Fredoka One', cursive !important;
-    font-size: 0.78rem !important;
-    font-weight: 900 !important;
-    letter-spacing: 1px;
-    padding: 6px 14px !important;
-    transition: all 0.2s ease;
+    font-weight: 800;
 }
-.btn-process:hover {
-    background: var(--comic-yellow) !important;
-    color: var(--comic-dark) !important;
-    transform: translateY(-2px);
-    box-shadow: 4px 5px 0 var(--comic-dark) !important;
+.return-form-card {
+    border: 4px solid var(--comic-dark);
+    box-shadow: 6px 6px 0 var(--comic-dark);
+    background: #fff;
 }
-.btn-process i { color: #fff !important; }
-.btn-process:hover i { color: var(--comic-dark) !important; }
+.return-form-empty {
+    text-align: center;
+    padding: 60px 30px;
+    background: var(--comic-cream);
+}
+.return-form-empty .icon { font-size: 4rem; display: block; margin-bottom: 16px; }
+.return-form-empty .title {
+    font-family: 'Bangers', cursive;
+    font-size: 1.5rem;
+    letter-spacing: 2px;
+    color: var(--comic-dark);
+    margin-bottom: 8px;
+}
+.return-form-empty .sub {
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.85rem;
+    color: #888;
+}
 </style>
 @endpush
 
 @section('content')
-<div class="card return-card">
+{{-- Flash Messages --}}
+@if(session('success'))
+    <div class="alert alert-success d-flex align-items-center gap-2 mb-4 px-4 py-3"
+         style="border:3px solid var(--comic-dark); border-radius:0; font-family:'Fredoka One',cursive; font-size:0.9rem; background:var(--comic-cream); color:var(--comic-dark); box-shadow:4px 4px 0 var(--comic-dark);">
+        <span style="font-size:1.2rem;">✅</span> {{ session('success') }}
+    </div>
+@endif
+@if(session('error'))
+    <div class="alert alert-danger d-flex align-items-center gap-2 mb-4 px-4 py-3"
+         style="border:3px solid var(--comic-red); border-radius:0; font-family:'Fredoka One',cursive; font-size:0.9rem; background:#fff; color:var(--comic-red); box-shadow:4px 4px 0 var(--comic-red);">
+        <span style="font-size:1.2rem;">❌</span> {{ session('error') }}
+    </div>
+@endif
+
+<div class="card">
     <div class="card-header border-0 pt-6">
         <div class="card-title">
-            <span class="fw-bold text-white" style="font-family:'Bangers',cursive; letter-spacing:2px; font-size:1.1rem;">📥 DAFTAR PENGEMBALIAN</span>
+            <span class="fw-bold text-white" style="font-family:'Bangers',cursive; letter-spacing:2px; font-size:1.1rem;">📥 PENGEMBALIAN BUKU</span>
         </div>
-        <div class="card-toolbar d-flex align-items-center gap-2">
-            {{-- Status Filter Tabs --}}
-            <a href="{{ route('admin.returns.index') }}"
-                class="btn-filter {{ !$status ? 'active' : '' }}">📋 Semua</a>
-            <a href="{{ route('admin.returns.index', ['status' => 'active']) }}"
-                class="btn-filter {{ $status === 'active' ? 'active' : '' }}">📤 Aktif</a>
-            <a href="{{ route('admin.returns.index', ['status' => 'late']) }}"
-                class="btn-filter {{ $status === 'late' ? 'active' : '' }}">⚠️ Terlambat</a>
-            <a href="{{ route('admin.returns.index', ['status' => 'returned']) }}"
-                class="btn-filter {{ $status === 'returned' ? 'active' : '' }}">✅ Dikembalikan</a>
+        <div class="card-toolbar">
+            <a href="{{ route('admin.returns.scan') }}" class="btn btn-outline-dark fw-bold"
+               style="border-radius:0; border:3px solid var(--comic-dark); box-shadow:3px 3px 0 var(--comic-dark); font-family:'Fredoka One',cursive; font-size:0.8rem;">
+                🔍 Full Screen Scan
+            </a>
         </div>
     </div>
 
-    <div class="card-body py-4 px-4">
+    <div class="card-body p-0">
+        <div class="scan-return-body">
 
-        {{-- Table --}}
-        <div class="comic-table-wrap">
-            <table class="table align-middle table-row-dashed fs-6 gy-4">
-                <thead>
-                    <tr class="text-start text-muted fw-bold fs-7 text-uppercase gs-0">
-                        <th style="min-width:130px;">Kode Transaksi</th>
-                        <th style="min-width:170px;">Anggota</th>
-                        <th style="min-width:80px;">Jumlah</th>
-                        <th style="min-width:140px;">Jatuh Tempo</th>
-                        <th style="min-width:100px;">Status</th>
-                        <th class="text-end" style="min-width:110px;">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody class="text-gray-600 fw-semibold">
-                    @forelse($borrowings as $borrowing)
-                    <tr class="return-row">
-                        {{-- Kode Transaksi --}}
-                        <td>
-                            <span class="fw-bold text-dark" style="font-family:'Fredoka One',cursive; font-size:0.85rem; letter-spacing:1px;">
-                                {{ $borrowing->transaction_code }}
-                            </span>
-                        </td>
+            {{-- LEFT: QR Scanner --}}
+            <div class="scan-return-left">
+                {{-- Camera select --}}
+                <div class="camera-select-wrap">
+                    <label style="font-family:'Fredoka One',cursive; font-size:0.7rem; letter-spacing:2px; font-weight:900; color:var(--comic-dark); display:block; margin-bottom:6px;">
+                        📷 PILIH KAMERA
+                    </label>
+                    <select id="camera-select" class="form-select" style="border-radius:0; border:2px solid var(--comic-dark); font-weight:800;">
+                        <option value="">-- Memuat...</option>
+                    </select>
+                </div>
 
-                        {{-- Anggota --}}
-                        <td>
-                            <div class="d-flex align-items-center gap-2">
-                                @if($borrowing->member->photo)
-                                    <img src="{{ asset('storage/' . $borrowing->member->photo) }}" alt="{{ $borrowing->member->name }}"
-                                        class="return-member-avatar" style="width:38px; height:38px; object-fit:cover; border-radius:0; flex-shrink:0;"/>
-                                @else
-                                    <div class="return-member-avatar">
-                                        {{ strtoupper(substr($borrowing->member->name, 0, 1)) }}
+                {{-- QR Reader --}}
+                <div id="qr-reader" class="scan-reader-box"></div>
+
+                {{-- Scan Status --}}
+                <div id="scanStatus" class="scan-status" style="color:#888;">
+                    Arahkan kamera ke QR code return buku
+                </div>
+
+                {{-- Manual Input --}}
+                <div class="scan-manual-wrap">
+                    <input type="text" id="manual-code" class="form-control"
+                           placeholder="Atau input kode transaksi..." style="border-radius:0;">
+                    <button type="button" id="btn-manual" class="btn btn-comic"
+                            style="border-radius:0; border:3px solid var(--comic-dark); box-shadow:3px 3px 0 var(--comic-dark); font-family:'Fredoka One',cursive; white-space:nowrap;">
+                        🔍 CARI
+                    </button>
+                </div>
+
+                {{-- Tombol Daftar Peminjaman --}}
+                <a href="{{ route('admin.borrowings.index') }}" class="btn w-100 mt-3 fw-bold"
+                   style="background:var(--comic-cream); color:var(--comic-dark); border-radius:0; border:3px solid var(--comic-dark); box-shadow:3px 3px 0 var(--comic-dark); font-family:'Fredoka One',cursive; font-size:0.82rem; letter-spacing:1px; padding:10px; display:flex; align-items:center; justify-content:center; gap:6px;">
+                    <i class="ki-duotone ki-book fs-4"></i>
+                    📋 DAFTAR PEMINJAMAN
+                </a>
+            </div>
+
+            {{-- RIGHT: Return Form --}}
+            <div class="scan-return-right">
+                <div class="return-form-card" id="formCard">
+                    <div class="card-header" style="background:var(--comic-dark); border-bottom:3px solid var(--comic-orange);">
+                        <div style="font-family:'Bangers',cursive; font-size:1.1rem; color:var(--comic-orange); letter-spacing:2px;">
+                            📋 DATA PEMINJAMAN
+                        </div>
+                    </div>
+
+                    {{-- Empty state --}}
+                    <div class="return-form-empty" id="formEmpty">
+                        <span class="icon">📷</span>
+                        <div class="title">SCAN QR TERLEBIH DAHULU</div>
+                        <div class="sub">Arahkan kamera ke QR code return buku</div>
+                    </div>
+
+                    {{-- Form data (shown after scan) --}}
+                    <div class="card-body" id="formData" style="background:var(--comic-cream);" class="d-none">
+                        <div id="formContent">
+                            {{-- Header info --}}
+                            <div style="background:#fff; border:3px solid var(--comic-dark); box-shadow:4px 4px 0 var(--comic-dark); padding:14px 18px; margin-bottom:20px;">
+                                <div style="display:flex; align-items:center; gap:12px;">
+                                    <div id="memberAvatar" style="width:44px; height:44px; border:2px solid var(--comic-dark); display:flex; align-items:center; justify-content:center; font-family:'Bangers',cursive; font-size:1.2rem; background:var(--comic-cream); flex-shrink:0;">
+                                        👤
                                     </div>
-                                @endif
-                                <div>
-                                    <span class="fw-bold text-dark d-block" style="font-size:0.88rem;">
-                                        {{ $borrowing->member->name }}
-                                    </span>
-                                    <span class="text-muted" style="font-size:0.72rem; font-weight:800;">
-                                        {{ $borrowing->member->member_code }}
-                                    </span>
-                                </div>
-                            </div>
-                        </td>
-
-                        {{-- Jumlah Buku --}}
-                        <td>
-                            <span class="badge badge-light-primary" style="font-size:0.78rem; border-radius:0 !important; font-weight:900; border:2px solid var(--comic-blue) !important; color:var(--comic-blue) !important;">
-                                📕 {{ $borrowing->details->count() }} buku
-                            </span>
-                        </td>
-
-                        {{-- Jatuh Tempo --}}
-                        <td>
-                            <div class="due-chip">
-                                @if($borrowing->isOverdue())
-                                    <span class="due-chip-main" style="color:var(--comic-red);">
-                                        {{ $borrowing->due_date->format('d M Y') }}
-                                    </span>
-                                    <span class="due-chip-late">
-                                        ⚠️ {{ $borrowing->daysOverdue() }} hari terlambat
-                                    </span>
-                                @else
-                                    <span class="due-chip-main" style="color:#888;">
-                                        {{ $borrowing->due_date->format('d M Y') }}
-                                    </span>
-                                @endif
-                            </div>
-                        </td>
-
-                        {{-- Status --}}
-                        <td>
-                            @php
-                                $s = match($borrowing->status->value) {
-                                    'active'   => ['cls' => 'status-active',   'txt' => '📤 AKTIF'],
-                                    'late'     => ['cls' => 'status-late',     'txt' => '⚠️ TERLAMBAT'],
-                                    'returned' => ['cls' => 'status-returned', 'txt' => '✅ KEMBALI'],
-                                    default    => ['cls' => '', 'txt' => ucfirst($borrowing->status->value)],
-                                };
-                            @endphp
-                            <span class="badge status-badge-ret {{ $s['cls'] }}">{{ $s['txt'] }}</span>
-                        </td>
-
-                        {{-- Aksi --}}
-                        <td class="text-end">
-                            @if($borrowing->status->value !== 'returned')
-                                <button type="button" class="btn-process"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#modal-return-{{ $borrowing->id }}">
-                                    <i class="ki-duotone ki-check-square fs-4"></i>
-                                    PROSES
-                                </button>
-                            @else
-                                <span style="font-family:'Fredoka One',cursive; font-size:0.75rem; color:var(--comic-green); letter-spacing:1px;">
-                                    ✅ SELESAI
-                                </span>
-                            @endif
-                        </td>
-                    </tr>
-
-                    {{-- Modal Proses Return per Borrowing --}}
-                    <tr>
-                        <td colspan="6" style="padding:0 !important; border:none !important;">
-                            <div class="modal fade" id="modal-return-{{ $borrowing->id }}" tabindex="-1" aria-hidden="true">
-                                <div class="modal-dialog modal-dialog-centered mw-900px">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h2 style="font-family:'Bangers',cursive; letter-spacing:2px; color:var(--comic-orange);">
-                                                📥 PROSES PENGEMBALIAN
-                                            </h2>
-                                            <div class="btn btn-sm btn-icon btn-active-color-primary" data-bs-dismiss="modal">
-                                                <i class="ki-duotone ki-cross fs-1"><span class="path1"></span><span class="path2"></span></i>
-                                            </div>
-                                        </div>
-                                        <form method="POST" action="{{ route('admin.returns.store', $borrowing) }}">
-                                            @csrf
-                                            <div class="modal-body">
-
-                                                {{-- Header Info --}}
-                                                <div style="background:var(--comic-cream); border:2px solid var(--comic-dark); box-shadow:4px 4px 0 var(--comic-dark); padding:14px 18px; margin-bottom:20px;">
-                                                    <div style="display:flex; align-items:center; gap:12px;">
-                                                        @if($borrowing->member->photo)
-                                                            <img src="{{ asset('storage/' . $borrowing->member->photo) }}" alt="{{ $borrowing->member->name }}"
-                                                                style="width:44px; height:44px; object-fit:cover; border:2px solid var(--comic-dark); box-shadow:3px 3px 0 var(--comic-dark); flex-shrink:0;"/>
-                                                        @else
-                                                            <div class="return-member-avatar" style="width:44px; height:44px; font-size:1.1rem;">
-                                                                {{ strtoupper(substr($borrowing->member->name, 0, 1)) }}
-                                                            </div>
-                                                        @endif
-                                                        <div>
-                                                            <div style="font-family:'Bangers',cursive; font-size:1.1rem; letter-spacing:1px; color:var(--comic-dark);">
-                                                                {{ $borrowing->transaction_code }}
-                                                            </div>
-                                                            <div style="font-family:'Fredoka One',cursive; font-size:0.8rem; color:#888;">
-                                                                {{ $borrowing->member->name }} — {{ $borrowing->member->member_code }}
-                                                            </div>
-                                                        </div>
-                                                        <div style="margin-left:auto; text-align:right;">
-                                                            <div style="font-family:'Fredoka One',cursive; font-size:0.75rem; color:#888; letter-spacing:1px;">JATUH TEMPO</div>
-                                                            <div style="font-family:'Bangers',cursive; font-size:0.95rem; color:{{ $borrowing->isOverdue() ? 'var(--comic-red)' : 'var(--comic-dark)' }};">
-                                                                {{ $borrowing->due_date->format('d M Y') }}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                {{-- Book Checklist --}}
-                                                <div style="margin-bottom:20px;">
-                                                    <div style="font-family:'Fredoka One',cursive; font-size:0.75rem; letter-spacing:2px; text-transform:uppercase; color:var(--comic-dark); font-weight:900; margin-bottom:10px;">
-                                                        📕 PILIH BUKU YANG DIKEMBALIKAN
-                                                    </div>
-                                                    <div class="comic-table-wrap">
-                                                        <table class="table align-middle" style="border:2px solid var(--comic-dark); box-shadow:3px 3px 0 var(--comic-dark);">
-                                                            <thead>
-                                                                <tr style="background:var(--comic-dark); color:var(--comic-orange); text-align:center;">
-                                                                    <th style="width:40px; padding:8px 12px;">
-                                                                        <input type="checkbox" class="form-check-input select-all-{{ $borrowing->id }}"
-                                                                            data-target="details-{{ $borrowing->id }}"/>
-                                                                    </th>
-                                                                    <th class="text-start" style="padding:8px 12px; font-weight:900; font-size:0.75rem;">JUDUL BUKU</th>
-                                                                    <th style="padding:8px 12px; font-weight:900; font-size:0.75rem;">KODE</th>
-                                                                    <th style="padding:8px 12px; font-weight:900; font-size:0.75rem;">STATUS</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                                @foreach($borrowing->details as $detail)
-                                                                <tr>
-                                                                    <td class="text-center" style="padding:8px 12px;">
-                                                                        <input type="checkbox" name="detail_ids[]" value="{{ $detail->id }}"
-                                                                            class="form-check-input detail-check-{{ $borrowing->id }}"
-                                                                            data-target="details-{{ $borrowing->id }}"
-                                                                            {{ $detail->status->value === 'returned' ? 'disabled checked' : '' }}/>
-                                                                    </td>
-                                                                    <td style="padding:8px 12px;">
-                                                                        <span style="font-weight:900; font-size:0.85rem; color:var(--comic-dark);">
-                                                                            📕 {{ Str::limit($detail->book->title, 40) }}
-                                                                        </span>
-                                                                    </td>
-                                                                    <td class="text-center" style="padding:8px 12px;">
-                                                                        <span style="font-family:monospace; font-size:0.75rem; color:#888; font-weight:700;">
-                                                                            {{ $detail->book->book_code }}
-                                                                        </span>
-                                                                    </td>
-                                                                    <td class="text-center" style="padding:8px 12px;">
-                                                                        @if($detail->status->value === 'returned')
-                                                                            <span class="badge status-badge-ret status-returned" style="font-size:0.68rem !important;">✅ SUDAH</span>
-                                                                        @else
-                                                                            <span class="badge status-badge-ret status-late" style="font-size:0.68rem !important;">⏳ BELUM</span>
-                                                                        @endif
-                                                                    </td>
-                                                                </tr>
-                                                                @endforeach
-                                                            </tbody>
-                                                        </table>
-                                                    </div>
-                                                </div>
-
-                                                {{-- Form Fields --}}
-                                                <div class="row g-4">
-                                                    <div class="col-md-6">
-                                                        <label class="form-label" style="font-family:'Fredoka One',cursive; font-size:0.75rem; letter-spacing:2px; text-transform:uppercase; color:var(--comic-dark); font-weight:900;">
-                                                            📅 TANGGAL KEMBALI
-                                                        </label>
-                                                        <input type="date" name="return_date" class="form-control"
-                                                            value="{{ now()->toDateString() }}" required/>
-                                                    </div>
-                                                    <div class="col-md-6">
-                                                        <label class="form-label" style="font-family:'Fredoka One',cursive; font-size:0.75rem; letter-spacing:2px; text-transform:uppercase; color:var(--comic-dark); font-weight:900;">
-                                                            📋 KONDISI BUKU
-                                                        </label>
-                                                        <select name="condition" class="form-select" required>
-                                                            <option value="">— Pilih —</option>
-                                                            <option value="Baik">✅ Baik — Normal</option>
-                                                            <option value="Rusak Ringan">⚠️ Rusak Ringan — Ada lecet/catatan</option>
-                                                            <option value="Rusak Berat">❌ Rusak Berat — Perlu ganti</option>
-                                                        </select>
-                                                    </div>
-                                                    <div class="col-12">
-                                                        <label class="form-label" style="font-family:'Fredoka One',cursive; font-size:0.75rem; letter-spacing:2px; text-transform:uppercase; color:var(--comic-dark); font-weight:900;">
-                                                            📝 CATATAN (OPSIONAL)
-                                                        </label>
-                                                        <textarea name="notes" class="form-control" rows="2"
-                                                            placeholder="Catatan pengembalian..."></textarea>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="modal-footer" style="border-top:2px solid rgba(26,26,46,0.1); padding:16px 20px;">
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                                                <button type="submit" class="btn btn-comic">
-                                                    <i class="ki-duotone ki-check fs-4" style="color:#fff !important;"></i>
-                                                    SIMPAN PENGEMBALIAN
-                                                </button>
-                                            </div>
-                                        </form>
+                                    <div>
+                                        <div style="font-family:'Bangers',cursive; font-size:1rem; letter-spacing:1px; color:var(--comic-dark);" id="trxCode">—</div>
+                                        <div style="font-family:'Fredoka One',cursive; font-size:0.8rem; color:#888;" id="memberName">—</div>
+                                    </div>
+                                    <div style="margin-left:auto; text-align:right;">
+                                        <div style="font-family:'Fredoka One',cursive; font-size:0.7rem; color:#888; letter-spacing:1px;">JATUH TEMPO</div>
+                                        <div style="font-family:'Bangers',cursive; font-size:0.95rem; color:var(--comic-dark);" id="dueDate">—</div>
                                     </div>
                                 </div>
                             </div>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="6">
-                            <div class="comic-empty">
-                                <span class="empty-emoji">📥</span>
-                                <div class="empty-title">TIDAK ADA DATA PENGEMBALIAN</div>
-                                <div class="empty-sub">Semua buku sudah dikembalikan atau belum ada peminjaman aktif</div>
+
+                            {{-- Books list --}}
+                            <div style="margin-bottom:20px;">
+                                <div style="font-family:'Fredoka One',cursive; font-size:0.75rem; letter-spacing:2px; text-transform:uppercase; color:var(--comic-dark); font-weight:900; margin-bottom:10px;">
+                                    📕 BUKU YANG DIKEMBALIKAN
+                                </div>
+                                <div id="booksList"></div>
+                                <div id="detailIdsContainer" class="d-none"></div>
                             </div>
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
+
+                            {{-- Return Form --}}
+                            <form method="POST" id="returnForm">
+                                @csrf
+                                <input type="hidden" name="detail_ids" id="detailIdsInput" value="">
+
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label style="font-family:'Fredoka One',cursive; font-size:0.7rem; letter-spacing:2px; text-transform:uppercase; color:var(--comic-dark); font-weight:900; display:block; margin-bottom:4px;">
+                                            📅 TANGGAL KEMBALI
+                                        </label>
+                                        <input type="date" name="return_date" id="returnDate" class="form-control"
+                                               style="border:3px solid var(--comic-dark); border-radius:0; font-weight:800;" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label style="font-family:'Fredoka One',cursive; font-size:0.7rem; letter-spacing:2px; text-transform:uppercase; color:var(--comic-dark); font-weight:900; display:block; margin-bottom:4px;">
+                                            📋 KONDISI
+                                        </label>
+                                        <select name="condition" id="conditionSelect" class="form-select" required
+                                                style="border:3px solid var(--comic-dark); border-radius:0; font-weight:800;">
+                                            <option value="Baik">✅ Baik — Normal</option>
+                                            <option value="Rusak Ringan">⚠️ Rusak Ringan</option>
+                                            <option value="Rusak Berat">❌ Rusak Berat</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12">
+                                        <label style="font-family:'Fredoka One',cursive; font-size:0.7rem; letter-spacing:2px; text-transform:uppercase; color:var(--comic-dark); font-weight:900; display:block; margin-bottom:4px;">
+                                            📝 CATATAN
+                                        </label>
+                                        <textarea name="notes" id="notesInput" class="form-control" rows="2"
+                                                  style="border:3px solid var(--comic-dark); border-radius:0;"
+                                                  placeholder="Opsional..."></textarea>
+                                    </div>
+                                </div>
+
+                                <div class="mt-4">
+                                    <button type="submit" class="btn btn-comic w-100"
+                                            style="border-radius:0; border:3px solid var(--comic-dark); box-shadow:4px 4px 0 var(--comic-dark); font-family:'Fredoka One',cursive; font-size:0.9rem; padding:12px;">
+                                        <i class="ki-duotone ki-check fs-5" style="color:#fff;"></i>
+                                        SIMPAN PENGEMBALIAN
+                                    </button>
+                                    <button type="button" class="btn btn-outline-dark w-100 mt-2"
+                                            id="btnReset"
+                                            style="border-radius:0; border:3px solid var(--comic-dark); box-shadow:3px 3px 0 var(--comic-dark); font-family:'Fredoka One',cursive;">
+                                        🔄 Scan Baru
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-
-        @include('layouts.partials._pagination', ['paginator' => $borrowings])
     </div>
 </div>
 @endsection
 
 @push('custom-js')
 <script>
-document.addEventListener('DOMContentLoaded', function () {
+(function () {
+    let scanner = null;
+    let lastScanned = '';
+    let lastScanTime = 0;
+    const COOLDOWN = 2000;
+    let currentBorrowingId = null;
 
-    // ── Select All per borrowing modal ──
-    document.querySelectorAll('[class^="select-all-"]').forEach(function (cb) {
-        cb.addEventListener('change', function () {
-            var target = this.getAttribute('data-target');
-            var checked = this.checked;
-            document.querySelectorAll('[data-target="' + target + '"]').forEach(function (el) {
-                if (!el.disabled) el.checked = checked;
+    // ── Init Scanner ──
+    async function initScanner() {
+        const select = document.getElementById('camera-select');
+        const reader = document.getElementById('qr-reader');
+
+        if (typeof Html5Qrcode === 'undefined') {
+            reader.innerHTML = '<div style="color:#fff; text-align:center; padding:20px; font-family:\'Fredoka One\',cursive;">❌ Library QR tidak tersedia. Gunakan input manual.</div>';
+            select.innerHTML = '<option value="">❌ Library tidak tersedia</option>';
+            return;
+        }
+
+        let devices = [];
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            stream.getTracks().forEach(t => t.stop());
+            devices = await Html5Qrcode.getCameras();
+        } catch (e) {
+            reader.innerHTML = '<div style="color:#fff; text-align:center; padding:20px; font-family:\'Fredoka One\',cursive;">🔒 Izin kamera ditolak.<br>Gunakan input manual.</div>';
+            select.innerHTML = '<option value="">❌ Kamera tidak tersedia</option>';
+            return;
+        }
+
+        if (!devices || devices.length === 0) {
+            reader.innerHTML = '<div style="color:#fff; text-align:center; padding:20px; font-family:\'Fredoka One\',cursive;">📷 Kamera tidak ditemukan.<br>Gunakan input manual.</div>';
+            select.innerHTML = '<option value="">❌ Tidak ada kamera</option>';
+            return;
+        }
+
+        select.innerHTML = devices.map(function (d, i) {
+            return '<option value="' + d.id + '">' + (d.label || ('Kamera ' + (i + 1))) + '</option>';
+        }).join('');
+
+        scanner = new Html5Qrcode('qr-reader');
+
+        async function startCam(id) {
+            if (scanner) { try { await scanner.stop(); } catch (_) {} }
+            try {
+                await scanner.start(id, { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 },
+                    handleScan, () => {});
+            } catch (e) {
+                setStatus('❌ Gagal memulai kamera: ' + (e.message || e), 'var(--comic-red)');
+            }
+        }
+
+        select.addEventListener('change', () => { if (select.value) startCam(select.value); });
+
+        await startCam(devices[0].id);
+        select.value = devices[0].id;
+    }
+
+    // ── Handle QR Scan ──
+    function handleScan(decodedText) {
+        console.log('🔍 RAW SCAN:', decodedText); // DEBUG
+
+        const now = Date.now();
+        if (decodedText === lastScanned && now - lastScanTime < COOLDOWN) return;
+        lastScanned = decodedText;
+        lastScanTime = now;
+
+        if (!decodedText.startsWith('RET-')) {
+            console.log('❌ Bukan format RET-'); // DEBUG
+            setStatus('⚠️ Bukan QR Return. Coba lagi.', 'var(--comic-red)');
+            return;
+        }
+
+        const code = decodedText.replace('RET-', '');
+        console.log('✅ Transaction Code:', code); // DEBUG
+        const statusText = '📷 QR Terdeteksi: ' + decodedText;
+        setStatus(statusText, 'var(--comic-orange)');
+        fetchBorrowing(code);
+    }
+
+    // ── Fetch Borrowing Data ──
+    async function fetchBorrowing(code) {
+        const url = '/admin/borrowings/lookup-by-code?code=' + encodeURIComponent(code);
+        console.log('🌐 Fetching:', url);
+
+        try {
+            const res = await fetch(url);
+            console.log('📡 HTTP Status:', res.status);
+            console.log('📡 Content-Type:', res.headers.get('content-type'));
+
+            // Check if response is HTML (error page) instead of JSON
+            const contentType = res.headers.get('content-type') || '';
+            if (!contentType.includes('application/json')) {
+                const text = await res.text();
+                console.error('❌ Response is not JSON (HTML error page):', text.substring(0, 200));
+                setStatus('❌ Server error: bukan JSON response', 'var(--comic-red)');
+                alert('Server Error!\nHTTP Status: ' + res.status + '\n\nBuka console (F12) untuk detail.');
+                return;
+            }
+
+            const json = await res.json();
+            console.log('📦 Response JSON:', json);
+
+            if (!json.success) {
+                setStatus('❌ ' + (json.error || 'Tidak ditemukan'), 'var(--comic-red)');
+                alert('Gagal mengambil data:\n' + (json.error || 'Tidak ditemukan') + '\n\nKode: ' + code);
+                return;
+            }
+
+            fillFormData(json.data);
+            showForm();
+            setStatus('✅ Data dimuat: ' + json.data.transaction_code, 'var(--comic-green)');
+        } catch (e) {
+            console.error('❌ Fetch error:', e);
+            setStatus('❌ Gagal mengambil data: ' + e.message, 'var(--comic-red)');
+            alert('Fetch Error: ' + e.message);
+        }
+    }
+
+    // ── Fill Form with Data ──
+    function fillFormData(data) {
+        currentBorrowingId = data.id;
+
+        document.getElementById('trxCode').textContent = data.transaction_code;
+        document.getElementById('memberName').textContent = data.member.name + ' — ' + (data.member.nis_nim || '-');
+        document.getElementById('dueDate').textContent = data.due_date;
+        document.getElementById('dueDate').style.color = data.is_overdue ? 'var(--comic-red)' : 'var(--comic-dark)';
+
+        // Member avatar initial
+        document.getElementById('memberAvatar').textContent = data.member.name.charAt(0).toUpperCase();
+
+        // Books list
+        const unreturned = data.books.filter(b => b.status === 'borrowed');
+        document.getElementById('booksList').innerHTML = unreturned.length
+            ? unreturned.map(b => '<div style="display:flex; align-items:center; gap:10px; padding:8px 12px; border:2px solid var(--comic-dark); background:#fff; box-shadow:2px 2px 0 var(--comic-dark); margin-bottom:8px;"><input type="checkbox" class="form-check-input book-check" value="' + b.id + '" style="border:2px solid var(--comic-dark); border-radius:0; width:18px; height:18px;" checked><div><div style="font-family:Fredoka One,cursive; font-size:0.85rem; color:var(--comic-dark);">📕 ' + b.title + '</div><div style="font-size:0.7rem; color:#888; font-weight:700;">' + b.book_code + '</div></div></div>').join('')
+            : '<div style="font-family:Fredoka One,cursive; font-size:0.85rem; color:#888;">Semua buku sudah dikembalikan.</div>';
+
+        // Set detail_ids hidden input
+        document.getElementById('detailIdsInput').value = unreturned.map(b => b.id).join(',');
+
+        // Pre-fill return date
+        document.getElementById('returnDate').value = new Date().toISOString().split('T')[0];
+
+        // Update checkbox select-all
+        updateSelectAll();
+    }
+
+    // ── Update Select All ──
+    function updateSelectAll() {
+        const booksList = document.getElementById('booksList');
+        if (!booksList) return;
+
+        const allChecks = booksList.querySelectorAll('.book-check');
+        const checkedCount = booksList.querySelectorAll('.book-check:checked').length;
+        const hasBooks = allChecks.length > 0;
+        const allChecked = hasBooks && checkedCount === allChecks.length;
+
+        // Add select all header if not exists
+        if (!booksList.querySelector('#selectAllBooks')) {
+            const headerDiv = document.createElement('div');
+            headerDiv.style.cssText = 'margin-bottom:8px; display:flex; align-items:center; gap:8px;';
+            headerDiv.innerHTML = '<input type="checkbox" id="selectAllBooks" style="border:2px solid var(--comic-dark); border-radius:0; width:18px; height:18px;">' +
+                '<label for="selectAllBooks" style="font-family:Fredoka One,cursive; font-size:0.8rem; font-weight:900; cursor:pointer;">PILIH SEMUA</label>';
+            booksList.insertBefore(headerDiv, booksList.firstChild);
+
+            document.getElementById('selectAllBooks').addEventListener('change', function () {
+                booksList.querySelectorAll('.book-check:not(:disabled)').forEach(cb => cb.checked = this.checked);
+                syncDetailIds();
             });
-        });
-    });
+        }
 
-    // ── Update select-all when individual checkboxes change ──
-    document.querySelectorAll('[class^="detail-check-"]').forEach(function (cb) {
-        cb.addEventListener('change', function () {
-            var target = this.getAttribute('data-target');
-            var all = Array.from(document.querySelectorAll('[data-target="' + target + '"]'));
-            var checked = Array.from(document.querySelectorAll('[data-target="' + target + '"]:checked:not(:disabled)'));
-            var selectAll = document.querySelector('.select-all-' + target.split('-')[1]);
-            if (!selectAll) return;
-            if (checked.length === 0) {
-                selectAll.checked = false;
-                selectAll.indeterminate = false;
-            } else if (checked.length === all.filter(function (el) { return !el.disabled; }).length) {
-                selectAll.checked = true;
-                selectAll.indeterminate = false;
-            } else {
-                selectAll.checked = false;
-                selectAll.indeterminate = true;
+        // Sync select all checkbox state
+        const selectAllCheck = document.getElementById('selectAllBooks');
+        if (selectAllCheck) selectAllCheck.checked = allChecked;
+
+        // Attach change listeners to book checkboxes
+        booksList.querySelectorAll('.book-check').forEach(cb => {
+            if (!cb.dataset.listener) {
+                cb.dataset.listener = '1';
+                cb.addEventListener('change', function () {
+                    syncDetailIds();
+                    updateSelectAll();
+                });
             }
         });
+
+        syncDetailIds();
+    }
+
+    // ── Sync detail_ids ──
+    function syncDetailIds() {
+        const ids = Array.from(document.querySelectorAll('.book-check:checked:not(:disabled)')).map(cb => cb.value);
+        document.getElementById('detailIdsInput').value = ids.join(',');
+    }
+
+    // ── Show Form ──
+    function showForm() {
+        document.getElementById('formEmpty').style.display = 'none';
+        document.getElementById('formData').classList.remove('d-none');
+        document.getElementById('formData').style.display = 'block';
+    }
+
+    // ── Reset Form ──
+    function resetForm() {
+        currentBorrowingId = null;
+        lastScanned = '';
+        document.getElementById('formEmpty').style.display = 'block';
+        document.getElementById('formData').classList.add('d-none');
+        document.getElementById('formData').style.display = 'none';
+        setStatus('Arahkan kamera ke QR code return buku', '#888');
+    }
+
+    // ── Set Status Text ──
+    function setStatus(msg, color) {
+        const el = document.getElementById('scanStatus');
+        el.textContent = msg;
+        el.style.color = color;
+    }
+
+    // ── Manual Search ──
+    document.getElementById('btn-manual').addEventListener('click', function () {
+        const code = document.getElementById('manual-code').value.trim();
+        if (!code) return;
+        // Try as-is first (if user pasted RET-...)
+        const cleanCode = code.startsWith('RET-') ? code.replace('RET-', '') : code;
+        fetchBorrowing(cleanCode);
     });
-});
+
+    document.getElementById('manual-code').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            document.getElementById('btn-manual').click();
+        }
+    });
+
+    // ── Reset Button ──
+    document.getElementById('btnReset').addEventListener('click', resetForm);
+
+    // ── Form Submit ──
+    document.getElementById('returnForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const ids = Array.from(document.querySelectorAll('.book-check:checked:not(:disabled)')).map(cb => cb.value);
+        document.getElementById('detailIdsInput').value = ids.join(',');
+
+        if (ids.length === 0) {
+            alert('Pilih minimal 1 buku untuk dikembalikan.');
+            return;
+        }
+
+        const bookCount = ids.length;
+        const confirmed = confirm('Yakin ingin mengembalikan ' + bookCount + ' buku?\n\nTekan OK untuk simpan, Cancel untuk batal.');
+        if (!confirmed) {
+            return;
+        }
+
+        // Set action URL before normal form submit
+        this.action = '/admin/returns/' + currentBorrowingId;
+
+        // Submit normally (not AJAX) so controller redirect + flash message works
+        this.submit();
+    });
+
+    // ── Start ──
+    initScanner();
+})();
 </script>
 @endpush

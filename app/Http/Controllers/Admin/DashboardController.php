@@ -11,6 +11,7 @@ use App\Models\Borrowing;
 use App\Models\Category;
 use App\Models\Fine;
 use App\Models\Member;
+use App\Models\MemberAttendance;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
@@ -26,6 +27,18 @@ class DashboardController extends Controller
         $recentBorrowings = Borrowing::with('member')
             ->latest()
             ->limit(5)
+            ->get();
+
+        // Pending borrowings (waiting for admin approval)
+        $pendingBorrowings = Borrowing::with(['member', 'details.book'])
+            ->where('status', BorrowingStatus::Pending)
+            ->orderBy('created_at', 'asc')
+            ->get();
+
+        // Members currently at library (scanned in)
+        $activeAttendances = MemberAttendance::active()
+            ->with('member')
+            ->orderBy('scanned_at', 'desc')
             ->get();
 
         // Chart 1: Peminjaman per Bulan (12 bulan terakhir)
@@ -55,6 +68,7 @@ class DashboardController extends Controller
 
         // Chart 3: Status Peminjaman Saat Ini
         $borrowingStatusCounts = [
+            'pending' => Borrowing::where('status', BorrowingStatus::Pending)->count(),
             'active' => Borrowing::where('status', BorrowingStatus::Active)->where('due_date', '>=', now()->toDateString())->count(),
             'late' => Borrowing::where('status', BorrowingStatus::Late)->count(),
             'returned' => Borrowing::where('status', BorrowingStatus::Returned)->whereDate('return_date', '>=', now()->subMonth()->toDateString())->count(),
@@ -69,6 +83,8 @@ class DashboardController extends Controller
             'monthlyBorrowings',
             'categoryBooks',
             'borrowingStatusCounts',
+            'pendingBorrowings',
+            'activeAttendances',
         ));
     }
 }

@@ -48,6 +48,7 @@ class BorrowingController extends Controller
 
         // Count per status for filter badges
         $totalAll = Borrowing::count();
+        $countPending = Borrowing::where('status', BorrowingStatus::Pending)->count();
         $countActive = Borrowing::where('status', BorrowingStatus::Active)->count();
         $countLate = Borrowing::where('status', BorrowingStatus::Late)->count();
         $countReturned = Borrowing::where('status', BorrowingStatus::Returned)->count();
@@ -57,7 +58,7 @@ class BorrowingController extends Controller
 
         return view('admin.borrowings.index', compact(
             'borrowings', 'members', 'books',
-            'statusParam', 'totalAll', 'countActive', 'countLate', 'countReturned', 'searchMember'
+            'statusParam', 'totalAll', 'countPending', 'countActive', 'countLate', 'countReturned', 'searchMember'
         ));
     }
 
@@ -140,6 +141,36 @@ class BorrowingController extends Controller
     /**
      * Show receipt page after successful borrowing
      */
+    public function approve(Borrowing $borrowing): RedirectResponse
+    {
+        try {
+            $this->borrowingService->approve($borrowing, auth()->id());
+
+            return redirect()
+                ->route('admin.borrowings.index')
+                ->with('success', 'Peminjaman berhasil disetujui. Notifikasi WhatsApp telah dikirim.');
+        } catch (\Exception $e) {
+            return redirect()
+                ->route('admin.borrowings.index')
+                ->with('error', 'Gagal menyetujui peminjaman: ' . $e->getMessage());
+        }
+    }
+
+    public function reject(Borrowing $borrowing): RedirectResponse
+    {
+        try {
+            $this->borrowingService->reject($borrowing);
+
+            return redirect()
+                ->route('admin.borrowings.index')
+                ->with('success', 'Peminjaman berhasil ditolak dan dihapus.');
+        } catch (\Exception $e) {
+            return redirect()
+                ->route('admin.borrowings.index')
+                ->with('error', 'Gagal menolak peminjaman: ' . $e->getMessage());
+        }
+    }
+
     public function receipt(Borrowing $borrowing): View
     {
         $borrowing->load(['member', 'details.book']);

@@ -77,7 +77,10 @@
     {{-- MEMBER INFO --}}
     <div class="member-box">
         <div class="member-name">{{ $member['name'] }}</div>
-        <div class="member-code">Kode: {{ $member['code'] }}{{ isset($member['class']) && $member['class'] ? ' | ' . $member['class'] : '' }}</div>
+        <div class="member-code">
+            NIS: {{ $member['nis_nim'] ?? '-' }} |
+            Kode: {{ $member['code'] }}{{ isset($member['class']) && $member['class'] ? ' | ' . $member['class'] : '' }}
+        </div>
     </div>
 
     {{-- BORROWING DATES --}}

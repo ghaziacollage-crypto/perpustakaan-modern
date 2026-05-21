@@ -689,7 +689,7 @@
         nameEl.textContent = member.name;
 
         const codeEl = document.getElementById('member-display-code');
-        codeEl.textContent = member.member_code + (member.class ? ' • ' + member.class : '');
+        codeEl.textContent = 'NIS: ' + (member.nis_nim || '-') + ' | ' + member.member_code + (member.class ? ' • ' + member.class : '');
 
         const avatarEl = document.getElementById('member-avatar');
         if (member.photo) {

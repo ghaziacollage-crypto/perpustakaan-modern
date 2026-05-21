@@ -54,6 +54,11 @@ class Member extends Model
         return $this->hasMany(WhatsAppLog::class);
     }
 
+    public function attendances(): HasMany
+    {
+        return $this->hasMany(MemberAttendance::class);
+    }
+
     /**
      * Pinjaman aktif = borrowing dengan status Active/Late
      * dan masih punya borrowing_details yang belum dikembalikan

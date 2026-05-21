@@ -162,6 +162,11 @@
                     📋 Semua
                     <span class="count-badge">{{ $totalAll }}</span>
                 </a>
+                <a href="{{ route('admin.borrowings.index', ['status' => 'pending']) }}"
+                    class="sfp-btn {{ $statusParam === 'pending' ? 'active' : '' }}">
+                    ⏳ Menunggu Persetujuan
+                    <span class="count-badge">{{ $countPending }}</span>
+                </a>
                 <a href="{{ route('admin.borrowings.index', ['status' => 'active']) }}"
                     class="sfp-btn {{ $statusParam === 'active' ? 'active' : '' }}">
                     📤 Aktif
@@ -230,7 +235,9 @@
                                 @endif
                                 <div>
                                     <span class="fw-bold text-dark d-block" style="font-size:0.85rem;">{{ $borrowing->member->name }}</span>
-                                    <span class="text-muted" style="font-size:0.72rem;">{{ $borrowing->member->member_code }}</span>
+                                    <span class="text-muted" style="font-size:0.72rem;">
+                                        NIS: {{ $borrowing->member->nis_nim ?? '-' }} | {{ $borrowing->member->member_code }}
+                                    </span>
                                 </div>
                             </div>
                         </td>
@@ -274,16 +281,17 @@
                         <td>
                             @php
                                 $statusMap = [
-                                    'active' => ['class' => 'badge-light-primary', 'text' => 'Aktif'],
-                                    'late' => ['class' => 'badge-light-danger', 'text' => 'Terlambat'],
-                                    'returned' => ['class' => 'badge-light-success', 'text' => 'Kembali'],
+                                    'pending'  => ['class' => 'badge-light-warning', 'text' => 'Menunggu Persetujuan'],
+                                    'active'  => ['class' => 'badge-light-primary', 'text' => 'Aktif'],
+                                    'late'    => ['class' => 'badge-light-danger',  'text' => 'Terlambat'],
+                                    'returned'=> ['class' => 'badge-light-success', 'text' => 'Kembali'],
                                 ];
                                 $s = $statusMap[$borrowing->status->value] ?? ['class' => 'badge-light-secondary', 'text' => ucfirst($borrowing->status->value)];
                             @endphp
                             <span class="badge {{ $s['class'] }}" style="font-size:0.72rem; border-radius:0 !important; border:2px solid currentColor !important;">{{ $s['text'] }}</span>
                         </td>
-                        <td class="text-end">
-                            <div class="d-flex justify-content-end align-items-center gap-1">
+                        <td class="text-end" style="overflow:visible;">
+                            <div class="d-flex justify-content-end align-items-center gap-1" style="overflow:visible;">
 
                                 {{-- Dropdown Aksi ── --}}
                                 <div class="aksi-dropdown" style="position:relative;">
@@ -300,31 +308,58 @@
                                     <div class="aksi-menu" style="display:none; position:absolute; right:0; top:calc(100% + 4px);
                                         background:#fff; border:2px solid var(--comic-dark); box-shadow:4px 4px 0 var(--comic-dark);
                                         min-width:160px; z-index:50; border-radius:0;">
-                                        <a href="{{ route('admin.borrowings.receipt', $borrowing) }}"
-                                            class="aksi-item" style="display:flex; align-items:center; gap:8px; padding:9px 14px;
-                                            text-decoration:none; border-bottom:1px solid rgba(26,26,46,0.08);">
-                                            <i class="ki-duotone ki-doc-text fs-5" style="color:var(--comic-dark);"></i>
-                                            <span style="font-family:'Fredoka One',cursive; font-size:0.78rem; color:var(--comic-dark); font-weight:700;">Lihat Struk</span>
-                                        </a>
-                                        @if($borrowing->status->value === 'active')
-                                            <form method="POST" action="{{ route('admin.borrowings.remind', $borrowing) }}">
+                                        @if($borrowing->status->value === 'pending')
+                                            <form method="POST" action="{{ route('admin.borrowings.approve', $borrowing) }}" class="approve-form">
                                                 @csrf
                                                 <button type="submit" class="aksi-item w-100"
-                                                    onclick="return confirm('Kirim reminder WA ke {{ $borrowing->member->name }}?')"
                                                     style="display:flex; align-items:center; gap:8px; padding:9px 14px;
                                                     border:none; background:transparent; cursor:pointer; border-bottom:1px solid rgba(26,26,46,0.08);">
-                                                    <i class="ki-duotone ki-message-text fs-5" style="color:#25D366;"></i>
-                                                    <span style="font-family:'Fredoka One',cursive; font-size:0.78rem; color:var(--comic-dark); font-weight:700;">Kirim Reminder WA</span>
+                                                    <i class="ki-duotone ki-check-circle fs-5" style="color:#28a745;"></i>
+                                                    <span style="font-family:'Fredoka One',cursive; font-size:0.78rem; color:#28a745; font-weight:700;">Setujui Peminjaman</span>
                                                 </button>
                                             </form>
+                                            <form method="POST" action="{{ route('admin.borrowings.reject', $borrowing) }}" class="reject-form">
+                                                @csrf
+                                                <button type="submit" class="aksi-item w-100"
+                                                    style="display:flex; align-items:center; gap:8px; padding:9px 14px;
+                                                    border:none; background:transparent; cursor:pointer; border-bottom:1px solid rgba(26,26,46,0.08);">
+                                                    <i class="ki-duotone ki-cross-circle fs-5" style="color:#dc3545;"></i>
+                                                    <span style="font-family:'Fredoka One',cursive; font-size:0.78rem; color:#dc3545; font-weight:700;">Tolak Peminjaman</span>
+                                                </button>
+                                            </form>
+                                            <a href="{{ route('admin.borrowings.receipt', $borrowing) }}"
+                                                class="aksi-item" style="display:flex; align-items:center; gap:8px; padding:9px 14px;
+                                                text-decoration:none; border-bottom:1px solid rgba(26,26,46,0.08);">
+                                                <i class="ki-duotone ki-doc-text fs-5" style="color:var(--comic-dark);"></i>
+                                                <span style="font-family:'Fredoka One',cursive; font-size:0.78rem; color:var(--comic-dark); font-weight:700;">Lihat Struk</span>
+                                            </a>
+                                        @else
+                                            <a href="{{ route('admin.borrowings.receipt', $borrowing) }}"
+                                                class="aksi-item" style="display:flex; align-items:center; gap:8px; padding:9px 14px;
+                                                text-decoration:none; border-bottom:1px solid rgba(26,26,46,0.08);">
+                                                <i class="ki-duotone ki-doc-text fs-5" style="color:var(--comic-dark);"></i>
+                                                <span style="font-family:'Fredoka One',cursive; font-size:0.78rem; color:var(--comic-dark); font-weight:700;">Lihat Struk</span>
+                                            </a>
+                                            @if($borrowing->status->value === 'active')
+                                                <form method="POST" action="{{ route('admin.borrowings.remind', $borrowing) }}">
+                                                    @csrf
+                                                    <button type="submit" class="aksi-item w-100"
+                                                        onclick="return confirm('Kirim reminder WA ke {{ $borrowing->member->name }}?')"
+                                                        style="display:flex; align-items:center; gap:8px; padding:9px 14px;
+                                                        border:none; background:transparent; cursor:pointer; border-bottom:1px solid rgba(26,26,46,0.08);">
+                                                 <i class="ki-duotone ki-message-text fs-5" style="color:#25D366;"></i>
+                                                        <span style="font-family:'Fredoka One',cursive; font-size:0.78rem; color:var(--comic-dark); font-weight:700;">Kirim Reminder WA</span>
+                                                    </button>
+                                                </form>
+                                            @endif
+                                            <a href="{{ route('admin.borrowings.receipt.pdf', $borrowing) }}"
+                                                target="_blank"
+                                                class="aksi-item" style="display:flex; align-items:center; gap:8px; padding:9px 14px;
+                                                text-decoration:none; border-bottom:none;">
+                                                <i class="ki-duotone ki-file-down fs-5" style="color:var(--comic-orange);"></i>
+                                                <span style="font-family:'Fredoka One',cursive; font-size:0.78rem; color:var(--comic-dark); font-weight:700;">Download PDF</span>
+                                            </a>
                                         @endif
-                                        <a href="{{ route('admin.borrowings.receipt.pdf', $borrowing) }}"
-                                            target="_blank"
-                                            class="aksi-item" style="display:flex; align-items:center; gap:8px; padding:9px 14px;
-                                            text-decoration:none; border-bottom:none;">
-                                            <i class="ki-duotone ki-file-down fs-5" style="color:var(--comic-orange);"></i>
-                                            <span style="font-family:'Fredoka One',cursive; font-size:0.78rem; color:var(--comic-dark); font-weight:700;">Download PDF</span>
-                                        </a>
                                     </div>
                                 </div>
 
@@ -367,6 +402,22 @@
 
 @push('custom-js')
 <script>
+// Toggle aksi dropdown - defined globally first
+function toggleAksi(btn, e) {
+    e.stopPropagation();
+    var menu = btn.closest('.aksi-dropdown').querySelector('.aksi-menu');
+    var isOpen = menu.style.display === 'block';
+
+    // Close all
+    document.querySelectorAll('.aksi-menu').forEach(function (m) { m.style.display = 'none'; });
+    document.querySelectorAll('.aksi-trigger').forEach(function (b) { b.classList.remove('aktif'); });
+
+    if (!isOpen) {
+        menu.style.display = 'block';
+        btn.classList.add('aktif');
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     // Focus search on Ctrl+K
     document.addEventListener('keydown', function (e) {
@@ -388,22 +439,23 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
     });
+
+    // Confirm approve/reject forms
+    document.querySelectorAll('.approve-form').forEach(function (form) {
+        form.addEventListener('submit', function (e) {
+            if (!confirm('Setujui peminjaman ini? Stok buku akan dikurangi dan notifikasi WhatsApp akan dikirim.')) {
+                e.preventDefault();
+            }
+        });
+    });
+
+    document.querySelectorAll('.reject-form').forEach(function (form) {
+        form.addEventListener('submit', function (e) {
+            if (!confirm('Tolak peminjaman ini? Data akan dihapus permanen dan notifikasi WhatsApp akan dikirim.')) {
+                e.preventDefault();
+            }
+        });
+    });
 });
-
-// Toggle aksi dropdown
-function toggleAksi(btn, e) {
-    e.stopPropagation();
-    var menu = btn.closest('.aksi-dropdown').querySelector('.aksi-menu');
-    var isOpen = menu.style.display === 'block';
-
-    // Close all
-    document.querySelectorAll('.aksi-menu').forEach(function (m) { m.style.display = 'none'; });
-    document.querySelectorAll('.aksi-trigger').forEach(function (b) { b.classList.remove('aktif'); });
-
-    if (!isOpen) {
-        menu.style.display = 'block';
-        btn.classList.add('aktif');
-    }
-}
 </script>
 @endpush

@@ -41,7 +41,7 @@ class SendOverdueReminders extends Command
             }
 
             $bookTitles = $borrowing->details->pluck('book.title')->implode(', ');
-            $daysLate = $borrowing->due_date->diffInDays(now());
+            $daysLate = (int) max(0, $borrowing->due_date->diffInDays(now()));
             $dueDateFormatted = $borrowing->due_date->translatedFormat('d F Y');
 
             $message = "⚠️ PERHATIAN: Anda terlambat mengembalikan buku!\n\n";

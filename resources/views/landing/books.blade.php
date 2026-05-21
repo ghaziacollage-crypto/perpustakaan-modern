@@ -25,6 +25,9 @@
                 <li class="nav-item">
                     <a class="nav-link btn btn-outline-light btn-sm px-3 fw-bold" href="{{ route('landing.categories') }}">🗂️ Kategori</a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('member.index') ? 'active-link' : '' }} btn btn-outline-light btn-sm px-3 fw-bold" href="{{ route('member.index') }}">👤 Member</a>
+                </li>
                 @auth
                 <li class="nav-item">
                     <a class="btn btn-warning btn-sm px-3 fw-bold text-dark" href="{{ route('admin.dashboard') }}">📊 Dashboard</a>

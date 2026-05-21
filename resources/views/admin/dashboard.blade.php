@@ -327,6 +327,10 @@
                     {{-- Legend right --}}
                     <div class="donut-legend" style="flex:1;">
                         <div class="donut-legend-row">
+                            <span class="lbl"><span class="dot" style="background:var(--comic-yellow);"></span>Pending</span>
+                            <span class="val" style="color:var(--comic-yellow);">{{ $borrowingStatusCounts['pending'] }}</span>
+                        </div>
+                        <div class="donut-legend-row">
                             <span class="lbl"><span class="dot" style="background:#4ECDC4;"></span>Aktif</span>
                             <span class="val" style="color:#4ECDC4;">{{ $borrowingStatusCounts['active'] }}</span>
                         </div>
@@ -394,6 +398,7 @@
                             @foreach($recentBorrowings as $borrowing)
                             @php
                                 $sm = [
+                                    'pending'  => ['bg' => 'var(--comic-yellow)', 't' => 'PENDING'],
                                     'active'   => ['bg' => '#3498db', 't' => 'AKTIF'],
                                     'late'     => ['bg' => 'var(--comic-red)', 't' => 'TERLAMBAT'],
                                     'returned' => ['bg' => 'var(--comic-green)', 't' => 'KEMBALI'],
@@ -443,7 +448,134 @@
     </div>
 </div>
 
-{{-- Row 3: Quick Actions + Denda ─────────────────────────────────── --}}
+{{-- Row 3: Pending Requests + Member Queue ─────────────────────────────── --}}
+<div class="row g-3 mb-3">
+    {{-- Pending Borrowing Requests --}}
+    <div class="col-lg-8">
+        <div class="card dash-chart-card">
+            <div class="card-header d-flex align-items-center justify-content-between" style="background: var(--comic-yellow);">
+                <div class="card-title" style="color: var(--comic-dark) !important;">
+                    ⏳ REQUEST PEMINJAMAN MENUNGGU VERIFIKASI
+                </div>
+                <span style="font-family:'Fredoka One',cursive; font-size:0.68rem; color:var(--comic-dark); letter-spacing:1px;">
+                    {{ $pendingBorrowings->count() }} request
+                </span>
+            </div>
+            <div class="card-body p-0">
+                @if($pendingBorrowings->count())
+                <div class="dash-table-wrap">
+                    <table class="dash-table">
+                        <thead>
+                            <tr>
+                                <th>👤 ANGGOTA</th>
+                                <th>📖 BUKU</th>
+                                <th>📅 WAKTU</th>
+                                <th>⚡ AKSI</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($pendingBorrowings as $pending)
+                            <tr>
+                                <td>
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <div style="width:32px; height:32px; background:var(--comic-cream); border:2px solid var(--comic-dark);
+                                                    display:flex; align-items:center; justify-content:center;
+                                                    font-family:'Fredoka One',cursive; font-size:0.75rem; color:var(--comic-dark); flex-shrink:0;">
+                                            {{ strtoupper(substr($pending->member->name, 0, 1)) }}
+                                        </div>
+                                        <div>
+                                            <div style="font-family:'Fredoka One',cursive; font-size:0.8rem; color:var(--comic-dark);">
+                                                {{ $pending->member->name }}
+                                            </div>
+                                            <div style="font-size:0.7rem; color:#aaa;">
+                                                NIS: {{ $pending->member->nis_nim ?? '-' }} | {{ $pending->member->class }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style="font-family:'Fredoka One',cursive; font-size:0.82rem; color:var(--comic-dark);">
+                                        {{ $pending->details->count() }} buku
+                                    </div>
+                                    <div style="font-size:0.7rem; color:#aaa;">
+                                        {{ $pending->details->take(2)->pluck('book.title')->implode(', ') }}
+                                        @if($pending->details->count() > 2), +{{ $pending->details->count() - 2 }} lagi @endif
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style="font-size:0.75rem; color:#888;">{{ $pending->created_at->diffForHumans() }}</div>
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-2">
+                                        <form action="{{ route('api.borrowings.approve', $pending->id) }}" method="POST" class="d-inline form-approve">
+                                            @csrf
+                                            <button type="submit" class="btn btn-sm fw-bold btn-approve"
+                                                style="background:#27ae60; color:#fff; border:2px solid var(--comic-dark); box-shadow:2px 2px 0 var(--comic-dark); border-radius:0; font-size:0.72rem;"
+                                                onclick="return confirm('Setujui peminjaman ini?');">
+                                                ✅ Setuju
+                                            </button>
+                                        </form>
+                                        <form action="{{ route('api.borrowings.reject', $pending->id) }}" method="POST" class="d-inline form-reject">
+                                            @csrf
+                                            <button type="submit" class="btn btn-sm fw-bold"
+                                                style="background:var(--comic-red); color:#fff; border:2px solid var(--comic-dark); box-shadow:2px 2px 0 var(--comic-dark); border-radius:0; font-size:0.72rem;"
+                                                onclick="return confirm('Tolak request ini?');">
+                                                ❌ Tolak
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                @else
+                <div class="empty-state">✅ TIDAK ADA REQUEST PENDING</div>
+                @endif
+            </div>
+        </div>
+    </div>
+
+    {{-- Members at Library Now --}}
+    <div class="col-lg-4">
+        <div class="card dash-chart-card">
+            <div class="card-header d-flex align-items-center justify-content-between" style="background: var(--comic-blue);">
+                <div class="card-title" style="color: #fff !important;">
+                    🟢 SISWA DI PERPUSTAKAAN
+                </div>
+                <span style="font-family:'Fredoka One',cursive; font-size:0.68rem; color:rgba(255,255,255,0.7); letter-spacing:1px;">
+                    {{ $activeAttendances->count() }} orang
+                </span>
+            </div>
+            <div class="card-body p-0" style="max-height:300px; overflow-y:auto;">
+                @if($activeAttendances->count())
+                    @foreach($activeAttendances as $attendance)
+                    <div style="display:flex; align-items:center; gap:12px; padding:12px 16px; border-bottom:1px solid rgba(26,26,46,0.08);">
+                        <div style="width:36px; height:36px; background:var(--comic-cream); border:2px solid var(--comic-blue);
+                                    display:flex; align-items:center; justify-content:center; font-family:'Fredoka One',cursive; font-size:0.9rem; color:var(--comic-dark); flex-shrink:0;">
+                            {{ strtoupper(substr($attendance->member->name, 0, 1)) }}
+                        </div>
+                        <div class="flex-grow-1">
+                            <div style="font-family:'Fredoka One',cursive; font-size:0.85rem; color:var(--comic-dark);">
+                                {{ $attendance->member->name }}
+                            </div>
+                            <div style="font-size:0.7rem; color:#aaa;">
+                                NIS: {{ $attendance->member->nis_nim ?? '-' }} | {{ $attendance->member->class }} | Scan: {{ $attendance->scanned_at->format('H:i') }}
+                            </div>
+                        </div>
+                        <span class="badge-comic" style="background:var(--comic-blue); color:#fff;">🟢</span>
+                    </div>
+                    @endforeach
+                @else
+                <div class="empty-state">👻 BELUM ADA SISWA</div>
+                @endif
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Row 4: Quick Actions + Denda ─────────────────────────────────── --}}
 <div class="row g-3">
     <div class="col-lg-5">
         <div class="card dash-chart-card">
@@ -476,19 +608,27 @@
                         </span>
                         <span class="qab-arrow">→</span>
                     </a>
-                    <a href="{{ route('admin.scan.index') }}" class="quick-action-btn qab-accent">
-                        <span class="qab-icon">📷</span>
+                    <a href="{{ route('scan.kiosk') }}" class="quick-action-btn qab-accent" target="_blank">
+                        <span class="qab-icon">🖥️</span>
                         <span class="qab-text">
-                            <strong>Scan QR Code</strong>
-                            <small>Cepat & mudah via kamera</small>
+                            <strong>Mode Kiosk</strong>
+                            <small>Scan di counter perpustakaan</small>
                         </span>
-                        <span class="qab-arrow">→</span>
+                        <span class="qab-arrow">↗</span>
                     </a>
                     <a href="{{ route('admin.returns.index') }}" class="quick-action-btn qab-secondary">
                         <span class="qab-icon">📥</span>
                         <span class="qab-text">
                             <strong>Proses Pengembalian</strong>
                             <small>Return buku + hitung denda</small>
+                        </span>
+                        <span class="qab-arrow">→</span>
+                    </a>
+                    <a href="{{ route('admin.returns.scan') }}" class="quick-action-btn qab-accent">
+                        <span class="qab-icon">📷</span>
+                        <span class="qab-text">
+                            <strong>Scan Return</strong>
+                            <small>Scan QR return buku</small>
                         </span>
                         <span class="qab-arrow">→</span>
                     </a>
