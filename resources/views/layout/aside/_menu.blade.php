@@ -114,7 +114,7 @@
         </div>
 
         <div class="menu-item">
-            <a class="menu-link {{ request()->routeIs('admin.settings.whatsapp') ? 'active' : '' }}" href="{{ route('admin.settings.whatsapp') }}">
+            <a class="menu-link {{ request()->routeIs('admin.whatsapp.*') || request()->routeIs('admin.settings.whatsapp') ? 'active' : '' }}" href="{{ route('admin.whatsapp.index') }}">
                 <span class="menu-icon"><i class="ki-duotone ki-message-text fs-2"><span class="path1"></span><span class="path2"></span><span class="path3"></span></i></span>
                 <span class="menu-title">WhatsApp</span>
             </a>

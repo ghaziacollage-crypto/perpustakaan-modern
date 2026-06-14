@@ -22,6 +22,7 @@ use App\Http\Controllers\Admin\ReturnController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\WhatsAppSettingsController;
+use App\Http\Controllers\Admin\WhatsAppNotificationController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LandingPageController;
 use App\Http\Controllers\MemberController;
@@ -144,6 +145,12 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::get('settings/whatsapp', [WhatsAppSettingsController::class, 'index'])->name('settings.whatsapp');
     Route::put('settings/whatsapp', [WhatsAppSettingsController::class, 'update'])->name('settings.whatsapp.update');
     Route::post('settings/whatsapp/test', [WhatsAppSettingsController::class, 'test'])->name('settings.whatsapp.test');
+
+    Route::get('whatsapp', [WhatsAppNotificationController::class, 'index'])->name('whatsapp.index');
+    Route::post('whatsapp/health', [WhatsAppNotificationController::class, 'health'])->name('whatsapp.health');
+    Route::post('whatsapp/test-message', [WhatsAppNotificationController::class, 'sendTest'])->name('whatsapp.test-message');
+    Route::get('whatsapp/bulk', [WhatsAppNotificationController::class, 'bulk'])->name('whatsapp.bulk');
+    Route::post('whatsapp/bulk', [WhatsAppNotificationController::class, 'sendBulk'])->name('whatsapp.bulk.send');
 
     Route::resource('hero-slides', HeroSlideController::class)->except(['create', 'edit', 'show']);
     Route::post('hero-slides/{heroSlide}/toggle', [HeroSlideController::class, 'toggle'])->name('hero-slides.toggle');
