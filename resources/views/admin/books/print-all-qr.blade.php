@@ -124,13 +124,10 @@
 @endpush
 
 @section('content')
-<div class="header">
-    <div>
-        <h1>📚 DAFTAR QR CODE BUKU</h1>
-        <div class="meta">PERPUSTAKAAN MODERN</div>
-    </div>
+<div style="text-align:center; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+    <h1 style="font-family:'Bangers',cursive; font-size:1.5rem; letter-spacing:2px; color:#1A1A2E;">📚 DAFTAR QR CODE BUKU</h1>
     <div style="display:flex;align-items:center;gap:12px;">
-        <div class="summary">Total: {{ $books->count() }} buku &bull; Dicetak: {{ now()->locale('id')->translatedFormat('d F Y, H:i') }} WIB</div>
+        <div class="summary" style="font-family:'Fredoka One',cursive; font-size:0.72rem; color:#888;">Total: {{ $books->count() }} buku &bull; {{ now()->locale('id')->translatedFormat('d F Y, H:i') }}</div>
         <button class="btn-print" onclick="window.print()">🖨️ PRINT QR CODES</button>
     </div>
 </div>

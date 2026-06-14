@@ -270,7 +270,7 @@
         </a>
     </div>
     <div class="col-6 col-lg-3">
-        <a href="{{ route('admin.borrowings.index') }}" class="comic-stat-card csc-borrowed">
+        <a href="{{ route('admin.returns.index') }}" class="comic-stat-card csc-borrowed">
             <div class="csc-icon">📤</div>
             <div class="csc-body">
                 <div class="csc-number">{{ number_format($borrowedBooks) }}</div>
@@ -374,7 +374,7 @@
         <div class="card dash-chart-card">
             <div class="card-header d-flex align-items-center justify-content-between">
                 <div class="card-title">📋 TRANSAKSI TERBARU</div>
-                <a href="{{ route('admin.borrowings.index') }}"
+                <a href="{{ route('admin.returns.index') }}"
                     style="background:var(--comic-orange); color:#fff; font-family:'Fredoka One',cursive;
                            font-size:0.68rem; border-radius:0; border:2px solid var(--comic-dark);
                            box-shadow:2px 2px 0 var(--comic-dark); padding:4px 10px; text-decoration:none;">
@@ -600,7 +600,7 @@
                         </span>
                         <span class="qab-arrow">→</span>
                     </a>
-                    <a href="{{ route('admin.borrowings.index') }}" class="quick-action-btn qab-secondary">
+                    <a href="{{ route('admin.returns.index') }}" class="quick-action-btn qab-secondary">
                         <span class="qab-icon">📤</span>
                         <span class="qab-text">
                             <strong>Proses Peminjaman</strong>
@@ -633,10 +633,10 @@
                         <span class="qab-arrow">→</span>
                     </a>
                     <a href="{{ route('admin.fines.index') }}" class="quick-action-btn qab-danger">
-                        <span class="qab-icon">💰</span>
+                        <span class="qab-icon">⏰</span>
                         <span class="qab-text">
                             <strong>Kelola Keterlambatan</strong>
-                            <small>Lihat & tagih keterlambatan terlambat</small>
+                            <small>Riwayat keterlambatan peminjaman</small>
                         </span>
                         <span class="qab-arrow">→</span>
                     </a>
@@ -648,7 +648,7 @@
     <div class="col-lg-7">
         <div class="card dash-chart-card">
             <div class="card-header d-flex align-items-center justify-content-between">
-                <div class="card-title">💰 KETERLAMBATAN BELUM LUNAS</div>
+                <div class="card-title">⏰ RIWAYAT KETERLAMBATAN</div>
                 <a href="{{ route('admin.fines.index') }}"
                     style="background:var(--comic-yellow); color:var(--comic-dark); font-family:'Fredoka One',cursive;
                            font-size:0.68rem; border-radius:0; border:2px solid var(--comic-dark);
@@ -658,31 +658,30 @@
             </div>
             <div class="card-body p-0">
                 @php
-                    $unpaidFines = \App\Models\Fine::with(['borrowing.member', 'borrowing.details.book'])
-                        ->where('status', 'unpaid')
+                    $recentFines = \App\Models\Fine::with(['borrowing.member', 'borrowing.details.book'])
                         ->latest()
                         ->take(5)
                         ->get();
                 @endphp
-                @if($unpaidFines->count())
+                @if($recentFines->count())
                 <div class="dash-table-wrap">
                     <table class="dash-table">
                         <thead>
                             <tr>
                                 <th>👤 ANGGOTA</th>
                                 <th>📖 BUKU</th>
-                                <th>💵 JUMLAH</th>
+                                <th>⏰ HARI</th>
                                 <th>⚡ STATUS</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($unpaidFines as $fine)
+                            @foreach($recentFines as $fine)
                             <tr>
                                 <td>
                                     <div style="display:flex; align-items:center; gap:8px;">
-                                        <div style="width:28px; height:28px; background:var(--comic-red); border:2px solid var(--comic-dark);
+                                        <div style="width:28px; height:28px; background:var(--comic-yellow); border:2px solid var(--comic-dark);
                                                     display:flex; align-items:center; justify-content:center;
-                                                    font-family:'Fredoka One',cursive; font-size:0.72rem; color:#fff; flex-shrink:0;">
+                                                    font-family:'Fredoka One',cursive; font-size:0.72rem; color:var(--comic-dark); flex-shrink:0;">
                                             {{ strtoupper(substr($fine->borrowing->member->name ?? '?', 0, 1)) }}
                                         </div>
                                         <span style="font-family:'Fredoka One',cursive; font-size:0.8rem; color:var(--comic-dark); white-space:nowrap;">
@@ -695,13 +694,13 @@
                                     <span style="font-size:0.78rem; color:#888;">{{ $bookTitle ? Str::limit($bookTitle, 20) : '-' }}</span>
                                 </td>
                                 <td>
-                                    <span style="font-family:'Bangers',cursive; font-size:0.98rem; color:var(--comic-red);">
-                                        Rp {{ number_format((float) $fine->total_amount, 0, ',', '.') }}
+                                    <span style="font-family:'Fredoka One',cursive; font-size:0.85rem; color:var(--comic-dark);">
+                                        {{ $fine->days_late }} hari
                                     </span>
                                 </td>
                                 <td>
-                                    <span class="badge-comic" style="background:var(--comic-red); color:#fff;">
-                                        BELUM LUNAS
+                                    <span class="badge-comic" style="background:{{ $fine->status === 'paid' ? 'var(--comic-green)' : 'var(--comic-yellow)' }}; color:#fff;">
+                                        {{ $fine->status === 'paid' ? 'LUNAS' : 'BELUM' }}
                                     </span>
                                 </td>
                             </tr>
@@ -711,7 +710,7 @@
                 </div>
                 @else
                 <div class="empty-state" style="padding:24px; color:var(--comic-green);">
-                    🎉 SEMUA KETERLAMBATAN SUDAH LUNAS!
+                    🎉 BELUM ADA DATA KETERLAMBATAN
                 </div>
                 @endif
             </div>

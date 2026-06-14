@@ -9,7 +9,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Book;
 use App\Models\Borrowing;
 use App\Models\Category;
-use App\Models\Fine;
 use App\Models\Member;
 use App\Models\MemberAttendance;
 use Illuminate\Support\Facades\DB;

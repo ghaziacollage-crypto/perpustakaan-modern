@@ -73,6 +73,15 @@
                             </select>
                             @if($errors?->has('status'))<div class="invalid-feedback d-block">{{ $errors->first('status') }}</div>@endif
                         </div>
+                        <div class="col-md-6">
+                            <label class="form-label" style="font-family:'Fredoka One',cursive; font-size:0.75rem; letter-spacing:1px; text-transform:uppercase; font-weight:900;">📦 KONDISI</label>
+                            <select name="kondisi" class="form-select @if($errors?->has('kondisi')) is-invalid @endif" required>
+                                <option value="normal" {{ old('kondisi', 'normal') === 'normal' ? 'selected' : '' }}>✅ Normal</option>
+                                <option value="rusak" {{ old('kondisi') === 'rusak' ? 'selected' : '' }}>⚠️ Rusak</option>
+                                <option value="hilang" {{ old('kondisi') === 'hilang' ? 'selected' : '' }}>❌ Hilang</option>
+                            </select>
+                            @if($errors?->has('kondisi'))<div class="invalid-feedback d-block">{{ $errors->first('kondisi') }}</div>@endif
+                        </div>
                         <div class="col-12">
                             <label class="form-label" style="font-family:'Fredoka One',cursive; font-size:0.75rem; letter-spacing:1px; text-transform:uppercase; font-weight:900;">🖼️ SAMPUL BUKU</label>
                             <input type="file" name="cover" class="form-control @if($errors?->has('cover')) is-invalid @endif" accept="image/*"/>

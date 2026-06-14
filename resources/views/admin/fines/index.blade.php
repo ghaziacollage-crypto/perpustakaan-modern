@@ -15,22 +15,31 @@
 </ul>
 @endsection
 
-@push('vendor-js')
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-@endpush
-
 @section('content')
 
 {{-- Summary Cards --}}
 <div class="row g-4 mb-5">
     <div class="col-md-4">
+        <div class="comic-stat" style="border-top:5px solid var(--comic-blue) !important;">
+            <div class="d-flex align-items-center gap-3">
+                <div class="stat-icon">📋</div>
+                <div>
+                    <div class="stat-label">TOTAL KETERLAMBATAN</div>
+                    <div class="stat-value" style="color:var(--comic-blue);">
+                        {{ number_format($fines->total()) }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
         <div class="comic-stat" style="border-top:5px solid var(--comic-yellow) !important;">
             <div class="d-flex align-items-center gap-3">
                 <div class="stat-icon">⏰</div>
                 <div>
-                    <div class="stat-label">BELUM LUNAS</div>
+                    <div class="stat-label">BELUM DIKEMBALIKAN</div>
                     <div class="stat-value" style="color:var(--comic-yellow);">
-                        Rp {{ number_format((float) $totalUnpaid, 0, ',', '.') }}
+                        {{ number_format($fines->where('status', 'unpaid')->count()) }}
                     </div>
                 </div>
             </div>
@@ -41,22 +50,9 @@
             <div class="d-flex align-items-center gap-3">
                 <div class="stat-icon">✅</div>
                 <div>
-                    <div class="stat-label">SUDAH LUNAS</div>
+                    <div class="stat-label">SUDAH DIKEMBALIKAN</div>
                     <div class="stat-value" style="color:var(--comic-green);">
-                        Rp {{ number_format((float) $totalPaid, 0, ',', '.') }}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="comic-stat" style="border-top:5px solid var(--comic-blue) !important;">
-            <div class="d-flex align-items-center gap-3">
-                <div class="stat-icon">💰</div>
-                <div>
-                    <div class="stat-label">TOTAL KETERLAMBATAN</div>
-                    <div class="stat-value" style="color:var(--comic-blue);">
-                        Rp {{ number_format((float) $totalAll, 0, ',', '.') }}
+                        {{ number_format($fines->where('status', 'paid')->count()) }}
                     </div>
                 </div>
             </div>
@@ -67,7 +63,7 @@
 <div class="card">
     <div class="card-header border-0 pt-6">
         <div class="card-title">
-            <span class="fw-bold text-white" style="font-family:'Bangers',cursive; letter-spacing:2px; font-size:1.1rem;">💰 MANAJEMEN KETERLAMBATAN</span>
+            <span class="fw-bold text-white" style="font-family:'Bangers',cursive; letter-spacing:2px; font-size:1.1rem;">⏰ RIWAYAT KETERLAMBATAN</span>
         </div>
         <div class="card-toolbar d-flex align-items-center gap-2">
             <a href="{{ route('admin.fines.index') }}"
@@ -76,11 +72,11 @@
             </a>
             <a href="{{ route('admin.fines.index', ['status' => 'unpaid']) }}"
                 class="btn-filter {{ request('status') === 'unpaid' ? 'active' : '' }}">
-                ⏰ Belum Lunas
+                ⏰ Belum Dikembalikan
             </a>
             <a href="{{ route('admin.fines.index', ['status' => 'paid']) }}"
                 class="btn-filter {{ request('status') === 'paid' ? 'active' : '' }}">
-                ✅ Lunas
+                ✅ Sudah Dikembalikan
             </a>
         </div>
     </div>
@@ -96,10 +92,8 @@
                         <th style="min-width:150px;">Anggota</th>
                         <th style="min-width:160px;">Buku</th>
                         <th style="min-width:70px;">Terlambat</th>
-                        <th style="min-width:110px;">Jumlah</th>
                         <th style="min-width:80px;">Status</th>
                         <th style="min-width:110px;">Tanggal Lunas</th>
-                        <th class="text-end" style="min-width:120px;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="text-gray-600 fw-semibold">
@@ -139,12 +133,7 @@
                             </span>
                         </td>
                         <td>
-                            <span class="fw-black" style="color:var(--comic-red); font-family:'Bangers',cursive; font-size:1.1rem;">
-                                Rp {{ number_format((float) $fine->total_amount, 0, ',', '.') }}
-                            </span>
-                        </td>
-                        <td>
-                            @if($fine->status->value === 'paid')
+                            @if($fine->status === 'paid')
                                 <span class="badge badge-light-success" style="font-size:0.72rem;">✅ Lunas</span>
                             @else
                                 <span class="badge badge-light-warning" style="font-size:0.72rem;">⏰ Belum</span>
@@ -155,33 +144,14 @@
                                 {{ $fine->paid_at?->format('d M Y') ?: '-' }}
                             </span>
                         </td>
-                        <td class="text-end">
-                            @if($fine->status->value === 'unpaid')
-                                <form method="POST" action="{{ route('admin.fines.mark-as-paid', $fine) }}" class="d-inline">
-                                    @csrf
-                                    <button type="submit" class="btn btn-comic btn-paid" title="Tandai Lunas">
-                                        <i class="ki-duotone ki-check-circle fs-4" style="color:#fff !important;"></i>
-                                        LUNAS
-                                    </button>
-                                </form>
-                            @else
-                                <form method="POST" action="{{ route('admin.fines.mark-as-unpaid', $fine) }}" class="d-inline">
-                                    @csrf
-                                    <button type="submit" class="btn btn-comic-delete btn-batal" title="Batalkan Lunas">
-                                        <i class="ki-duotone ki-arrows-circle fs-4"></i>
-                                        BATAL
-                                    </button>
-                                </form>
-                            @endif
-                        </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="8">
+                        <td colspan="6">
                             <div class="comic-empty">
                                 <span class="empty-emoji">🎉</span>
                                 <div class="empty-title">TIDAK ADA DATA KETERLAMBATAN</div>
-                                <div class="empty-sub">Semua keterlambatan sudah lunas atau belum ada keterlambatan</div>
+                                <div class="empty-sub">Semua keterlambatan sudah dikembalikan atau belum ada keterlambatan</div>
                             </div>
                         </td>
                     </tr>
@@ -194,58 +164,3 @@
     </div>
 </div>
 @endsection
-
-@push('custom-js')
-<style>
-.btn-paid {
-    background: var(--comic-green) !important;
-    border-color: var(--comic-dark) !important;
-    box-shadow: 3px 3px 0 var(--comic-dark) !important;
-}
-.btn-paid:hover {
-    background: var(--comic-yellow) !important;
-    color: var(--comic-dark) !important;
-}
-</style>
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    // Paid confirmation
-    document.querySelectorAll('.btn-paid').forEach(function (btn) {
-        btn.addEventListener('click', function (e) {
-            e.preventDefault();
-            var form = btn.closest('form');
-            Swal.fire({
-                title: 'Tandai lunas?',
-                text: 'Keterlambatan akan ditandai sebagai sudah lunas.',
-                icon: 'success',
-                showCancelButton: true,
-                confirmButtonText: 'Ya, lunas!',
-                cancelButtonText: 'Batal',
-                confirmButtonColor: '#00C896',
-            }).then(function (r) {
-                if (r.isConfirmed) form.submit();
-            });
-        });
-    });
-
-    // Batal confirmation
-    document.querySelectorAll('.btn-batal').forEach(function (btn) {
-        btn.addEventListener('click', function (e) {
-            e.preventDefault();
-            var form = btn.closest('form');
-            Swal.fire({
-                title: 'Batalkan?',
-                text: 'Status keterlambatan akan dikembalikan ke belum lunas.',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'Ya, batalkan!',
-                cancelButtonText: 'Batal',
-                confirmButtonColor: '#FF3366',
-            }).then(function (r) {
-                if (r.isConfirmed) form.submit();
-            });
-        });
-    });
-});
-</script>
-@endpush

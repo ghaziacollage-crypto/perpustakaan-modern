@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Books;
 
+use App\Enums\BookCondition;
 use App\Enums\BookStatus;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -30,6 +31,7 @@ class UpdateBookRequest extends FormRequest
             'stock' => ['required', 'integer', 'min:0'],
             'rack_location' => ['nullable', 'string', 'max:100'],
             'status' => ['required', Rule::enum(BookStatus::class)],
+            'kondisi' => ['required', Rule::enum(BookCondition::class)],
             'cover' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
             '_remove_cover' => ['nullable', 'boolean'],
         ];

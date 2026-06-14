@@ -86,7 +86,6 @@
                 <span class="menu-title">Laporan</span>
             </a>
         </div>
-        <!--end:Transaksi-->
 
         <!--begin:Pengaturan-->
         <div class="menu-item">

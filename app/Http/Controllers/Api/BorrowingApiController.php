@@ -111,7 +111,7 @@ class BorrowingApiController extends Controller
      */
     public function show(Borrowing $borrowing): JsonResponse
     {
-        $borrowing->load(['member', 'details.book', 'fine']);
+        $borrowing->load(['member', 'details.book']);
 
         return response()->json([
             'success' => true,
@@ -141,10 +141,7 @@ class BorrowingApiController extends Controller
                     'status' => $d->status->value,
                     'returned_at' => $d->returned_at?->format('d M Y'),
                 ]),
-                'fine' => $borrowing->fine ? [
-                    'amount' => number_format($borrowing->fine->total_amount),
-                    'status' => $borrowing->fine->status->value,
-                ] : null,
+                'fine' => null,
             ],
         ]);
     }

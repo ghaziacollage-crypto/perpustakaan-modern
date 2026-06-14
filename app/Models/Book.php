@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\BookCondition;
 use App\Enums\BookStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -27,6 +28,7 @@ class Book extends Model
         'synopsis',
         'qr_code',
         'status',
+        'kondisi',
     ];
 
     protected $casts = [
@@ -35,6 +37,7 @@ class Book extends Model
         'pages' => 'integer',
         'stock' => 'integer',
         'status' => BookStatus::class,
+        'kondisi' => BookCondition::class,
     ];
 
     public function category(): BelongsTo

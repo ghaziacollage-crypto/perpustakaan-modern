@@ -436,9 +436,6 @@
             <a href="{{ route('admin.books.create') }}" class="btn-comic">
                 <i class="ki-duotone ki-plus fs-4"></i> Tambah Buku
             </a>
-            <a href="{{ route('admin.export.books') }}" class="btn-comic-blue">
-                <i class="ki-duotone ki-tablet-ks fs-4"></i> Export CSV
-            </a>
             <form method="POST" action="{{ route('admin.books.bulk-qr') }}" class="d-inline">
                 @csrf
                 <button type="submit" class="btn-comic-green"

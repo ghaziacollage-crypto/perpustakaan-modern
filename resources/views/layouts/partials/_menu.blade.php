@@ -97,13 +97,6 @@
             </a>
         </div>
 
-        {{-- Section: Sistem --}}
-        <div class="menu-item pt-5">
-            <div class="menu-content">
-                <span class="menu-heading fw-bold text-uppercase fs-7">Sistem</span>
-            </div>
-        </div>
-
         <div class="menu-item">
             <a class="menu-link {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}" href="{{ route('admin.reports.index') }}">
                 <span class="menu-icon">
@@ -111,6 +104,13 @@
                 </span>
                 <span class="menu-title">Laporan</span>
             </a>
+        </div>
+
+        {{-- Section: Sistem --}}
+        <div class="menu-item pt-5">
+            <div class="menu-content">
+                <span class="menu-heading fw-bold text-uppercase fs-7">Sistem</span>
+            </div>
         </div>
 
         <div class="menu-item">

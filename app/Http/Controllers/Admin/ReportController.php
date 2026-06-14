@@ -5,11 +5,9 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\BorrowingStatus;
-use App\Enums\FineStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Borrowing;
 use App\Models\BorrowingDetail;
-use App\Models\Fine;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
@@ -50,14 +48,6 @@ class ReportController extends Controller
             ->limit(20)
             ->get();
 
-        // Fine summary
-        $fineSummary = [
-            'unpaid' => Fine::where('status', FineStatus::Unpaid->value)->sum('total_amount'),
-            'paid' => Fine::where('status', FineStatus::Paid->value)->sum('total_amount'),
-            'pending_count' => Fine::where('status', FineStatus::Unpaid->value)->count(),
-            'paid_count' => Fine::where('status', FineStatus::Paid->value)->count(),
-        ];
-
         // Summary cards
         $summary = [
             'total_borrowings' => Borrowing::whereYear('loan_date', $year)->count(),
@@ -73,7 +63,7 @@ class ReportController extends Controller
 
         return view('admin.reports.index', compact(
             'summary', 'monthlyStats', 'popularBooks', 'activeMembers',
-            'overdueList', 'fineSummary', 'chartData', 'year'
+            'overdueList', 'chartData', 'year'
         ));
     }
 

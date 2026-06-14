@@ -258,9 +258,6 @@
             <a href="{{ route('admin.members.bulk-qr') }}" class="btn-toolbar-export" style="background: #27ae60; color: #fff; text-decoration:none;">
                 <i class="ki-duotone ki-arrows-circle fs-2"></i> Sinkronisasi QR
             </a>
-            <a href="{{ route('admin.export.members') }}" class="btn-toolbar-export">
-                <i class="ki-duotone ki-tablet-ks fs-2"></i> Export
-            </a>
             <button type="button" class="btn-toolbar" data-bs-toggle="modal" data-bs-target="#modal-add-member">
                 <i class="ki-duotone ki-plus fs-2"></i> Tambah
             </button>

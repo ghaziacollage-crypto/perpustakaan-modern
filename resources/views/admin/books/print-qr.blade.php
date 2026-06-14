@@ -133,6 +133,9 @@
 @endpush
 
 @section('content')
+<div style="text-align: center; margin-bottom: 20px;">
+    <img src="{{ asset('kop.png') }}" alt="Kop Surat" style="max-width:100%; height:auto;" />
+</div>
 <div class="card mb-5">
     <div class="card-header border-0 pt-6" style="background: var(--comic-dark) !important;">
         <div class="card-title">
@@ -204,6 +207,14 @@
         @endif
     </div>
 </div>
+<div style="text-align: center; margin-top: 40px; page-break-inside: avoid;">
+    <div>Kepala Perpustakaan</div>
+    <div style="height:60px;"></div>
+    <div style="font-weight:bold; text-decoration:underline;">
+        Ailen Rossa Nauda, M.Pd.
+    </div>
+    <div>NIP. 196904061998022001</div>
+</div>
 @endsection
 
 @push('custom-js')
@@ -227,6 +238,8 @@ function printBookQr() {
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Fredoka One',sans-serif;padding:24px;background:#fff;}
+.kop{text-align:center;margin-bottom:20px;}
+.kop img{max-width:100%;height:auto;}
 #wrap{display:flex;align-items:center;gap:20px;border:3px solid #1A1A2E;padding:20px;box-shadow:6px 6px 0 #1A1A2E;background:#fff;}
 #wrap img{width:160px;height:160px;object-fit:contain;}
 .info{border-left:3px solid #1A1A2E;padding-left:20px;flex:1;}
@@ -234,10 +247,13 @@ body{font-family:'Fredoka One',sans-serif;padding:24px;background:#fff;}
 .row{display:flex;gap:10px;margin:5px 0;font-size:13px;}
 .lbl{color:#aaa;font-size:11px;min-width:60px;text-transform:uppercase;}
 .val{color:#1A1A2E;font-weight:900;}
+.signature{text-align:center;margin-top:40px;}
+.signature .title{font-weight:bold;}
 @media print{body{padding:0;}}
 </style>
 </head>
 <body>
+<div class="kop"><img src="{{ asset('kop.png') }}" alt="Kop Surat"/></div>
 <div id="wrap">
     <img src="${qrSrc}" alt="QR"/>
     <div class="info">
@@ -247,6 +263,12 @@ body{font-family:'Fredoka One',sans-serif;padding:24px;background:#fff;}
         <div class="row"><span class="lbl">PENULIS</span><span class="val">${author}</span></div>
         <div class="row"><span class="lbl">KATEGORI</span><span class="val">${category}</span></div>
     </div>
+</div>
+<div class="signature">
+    <div>Kepala Perpustakaan</div>
+    <div style="height:60px;"></div>
+    <div class="title" style="font-weight:bold;text-decoration:underline;">Ailen Rossa Nauda, M.Pd.</div>
+    <div>NIP. 196904061998022001</div>
 </div>
 <script>window.onload=function(){window.print();}<\/script>
 </body></html>`;

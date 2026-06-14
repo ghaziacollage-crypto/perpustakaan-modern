@@ -229,7 +229,7 @@
 /* ── Stats Row ── */
 .stats-row {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 12px;
     margin-bottom: 20px;
 }
@@ -366,12 +366,7 @@
         <div class="stat-label">Sedang Dipinjam</div>
     </div>
     <div class="stat-box" style="border-top-color: var(--comic-red);">
-        <div class="stat-icon">⚠️</div>
-        <div class="stat-value">{{ number_format($unpaidFines->count()) }}</div>
-        <div class="stat-label">Keterlambatan Aktif</div>
-    </div>
-    <div class="stat-box" style="border-top-color: var(--comic-green);">
-        <div class="stat-icon">✅</div>
+        <div class="stat-icon">⏰</div>
         <div class="stat-value">{{ number_format($member->fines_count) }}</div>
         <div class="stat-label">Total Keterlambatan</div>
     </div>
@@ -556,54 +551,6 @@
                                 <span class="badge-mini" style="background:{{ $s['bg'] }}; color:#fff;">
                                     {{ $s['label'] }}
                                 </span>
-                            </td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        @endif
-
-        {{-- Info Section: Keterlambatan Aktif --}}
-        @if($unpaidFines->count())
-        <div class="info-section">
-            <div class="info-section-header">
-                <span class="section-title">⚠️ KETERLAMBATAN AKTIF</span>
-                <a href="{{ route('admin.fines.index', ['member' => $member->id]) }}"
-                    style="background:var(--comic-red); color:#fff; border-radius:0; border:2px solid var(--comic-dark);
-                           box-shadow:2px 2px 0 var(--comic-dark); font-family:'Fredoka One',cursive; font-size:0.72rem;
-                           padding:4px 12px; text-decoration:none;">
-                    Lihat Semua →
-                </a>
-            </div>
-            <div class="info-section-body" style="padding:0;">
-                <table class="mini-table">
-                    <thead>
-                        <tr>
-                            <th>BUKU</th>
-                            <th>JUMLAH</th>
-                            <th>TANGGAL</th>
-                            <th>STATUS</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($unpaidFines as $fine)
-                        <tr>
-                            <td>
-                                @php
-                                    $bookTitle = $fine->borrowing && $fine->borrowing->details->first()?->book?->title;
-                                @endphp
-                                <span style="font-size:0.8rem;">{{ $bookTitle ? Str::limit($bookTitle, 28) : '-' }}</span>
-                            </td>
-                            <td>
-                                <span style="font-family:'Bangers',cursive; font-size:0.95rem; color:var(--comic-red);">
-                                    Rp {{ number_format((float) $fine->total_amount, 0, ',', '.') }}
-                                </span>
-                            </td>
-                            <td style="font-size:0.78rem; color:#888;">{{ $fine->created_at->format('d M Y') }}</td>
-                            <td>
-                                <span class="badge-mini" style="background:var(--comic-red); color:#fff;">BELUM LUNAS</span>
                             </td>
                         </tr>
                         @endforeach

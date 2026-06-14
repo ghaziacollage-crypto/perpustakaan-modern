@@ -71,15 +71,24 @@
 .rank-2 { background: var(--comic-yellow); color: var(--comic-dark); }
 .rank-3 { background: var(--comic-blue); }
 .rank-other { background: #eee; color: #888; }
+.reports-year-filter { width: 100%; }
+.reports-year-filter .form-select { max-width: 260px; }
+.reports-chart-wrap { position: relative; height: 320px; }
+.reports-action-card .card-header { min-height: 76px; }
+.reports-action-card .card-body { min-height: 150px; }
+@media (max-width: 767.98px) {
+    .reports-year-filter .form-select { max-width: none; }
+    .reports-chart-wrap { height: 260px; }
+}
 </style>
 @endpush
 
 @section('content')
 
 {{-- Year Selector --}}
-<form method="GET" class="comic-search-bar mb-5" style="max-width:400px;">
-    <div class="row g-3 align-items-end">
-        <div class="col-md-8">
+<form method="GET" class="comic-search-bar reports-year-filter mb-5">
+    <div class="row g-3 align-items-end justify-content-between">
+        <div class="col-md-6 col-xl-4">
             <label class="form-label">📅 TAHUN</label>
             <select name="year" class="form-select form-select-solid" onchange="this.form.submit()">
                 @for($y = now()->year; $y >= now()->year - 5; $y--)
@@ -92,32 +101,25 @@
 
 {{-- Summary Cards --}}
 <div class="row g-4 mb-5">
-    <div class="col-6 col-lg-3">
+    <div class="col-md-4">
         <div class="summary-stat-card" style="border-top:5px solid var(--comic-blue) !important;">
             <div class="ssc-label">📤 TOTAL PEMINJAMAN</div>
             <div class="ssc-value" style="color:var(--comic-blue);">{{ number_format($summary['total_borrowings']) }}</div>
             <div class="ssc-icon">📤</div>
         </div>
     </div>
-    <div class="col-6 col-lg-3">
+    <div class="col-md-4">
         <div class="summary-stat-card" style="border-top:5px solid var(--comic-yellow) !important;">
             <div class="ssc-label">📋 AKTIF SAAT INI</div>
             <div class="ssc-value" style="color:#b07d00;">{{ number_format($summary['active_borrowings']) }}</div>
             <div class="ssc-icon">📋</div>
         </div>
     </div>
-    <div class="col-6 col-lg-3">
+    <div class="col-md-4">
         <div class="summary-stat-card" style="border-top:5px solid var(--comic-red) !important;">
             <div class="ssc-label">⚠️ TERLAMBAT</div>
             <div class="ssc-value" style="color:var(--comic-red);">{{ number_format($summary['overdue_count']) }}</div>
             <div class="ssc-icon">⚠️</div>
-        </div>
-    </div>
-    <div class="col-6 col-lg-3">
-        <div class="summary-stat-card" style="border-top:5px solid var(--comic-green) !important;">
-            <div class="ssc-label">💰 TOTAL KETERLAMBATAN</div>
-            <div class="ssc-value" style="color:var(--comic-green); font-size:1.6rem;">Rp {{ number_format($fineSummary['paid'] + $fineSummary['unpaid'], 0, ',', '.') }}</div>
-            <div class="ssc-icon">💰</div>
         </div>
     </div>
 </div>
@@ -125,58 +127,19 @@
 {{-- Charts Row --}}
 <div class="row g-4 mb-4">
     {{-- Monthly Borrowing Chart --}}
-    <div class="col-lg-8">
+    <div class="col-12">
         <div class="card report-card h-100">
             <div class="card-header">
                 <div class="card-title">📊 GRAFIK PEMINJAMAN {{ $year }}</div>
             </div>
             <div class="card-body p-4">
-                <div style="position:relative; height:260px;">
+                <div class="reports-chart-wrap">
                     <canvas id="borrowChart"></canvas>
                 </div>
             </div>
         </div>
     </div>
 
-    {{-- Fine Summary --}}
-    <div class="col-lg-4">
-        <div class="card report-card h-100">
-            <div class="card-header">
-                <div class="card-title">💰 RINGKASAN KETERLAMBATAN</div>
-            </div>
-            <div class="card-body p-4">
-                <div class="d-flex flex-column gap-3">
-                    <div style="background:#fff8f0; border:2px solid var(--comic-dark); box-shadow:3px 3px 0 var(--comic-dark); padding:12px 14px;">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span style="font-size:0.78rem; font-weight:900; color:#b07d00;">⏰ BELUM LUNAS</span>
-                            <span style="font-family:'Bangers',cursive; font-size:1.2rem; color:#b07d00;">{{ $fineSummary['pending_count'] }} keterlambatan</span>
-                        </div>
-                        <div style="font-family:'Bangers',cursive; font-size:1.1rem; color:#b07d00; margin-top:4px;">
-                            Rp {{ number_format($fineSummary['unpaid'], 0, ',', '.') }}
-                        </div>
-                    </div>
-                    <div style="background:#f0fff4; border:2px solid var(--comic-dark); box-shadow:3px 3px 0 var(--comic-dark); padding:12px 14px;">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span style="font-size:0.78rem; font-weight:900; color:var(--comic-green);">✅ SUDAH LUNAS</span>
-                            <span style="font-family:'Bangers',cursive; font-size:1.2rem; color:var(--comic-green);">{{ $fineSummary['paid_count'] }} keterlambatan</span>
-                        </div>
-                        <div style="font-family:'Bangers',cursive; font-size:1.1rem; color:var(--comic-green); margin-top:4px;">
-                            Rp {{ number_format($fineSummary['paid'], 0, ',', '.') }}
-                        </div>
-                    </div>
-                    <div style="background:var(--comic-dark); border:2px solid var(--comic-dark); box-shadow:3px 3px 0 var(--comic-orange); padding:12px 14px;">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span style="font-size:0.78rem; font-weight:900; color:rgba(255,255,255,0.6);">💰 TOTAL</span>
-                            <span style="font-family:'Bangers',cursive; font-size:1.2rem; color:var(--comic-orange);">Rp {{ number_format($fineSummary['paid'] + $fineSummary['unpaid'], 0, ',', '.') }}</span>
-                        </div>
-                    </div>
-                </div>
-                <a href="{{ route('admin.fines.index') }}" class="btn btn-comic mt-4 w-100" style="margin-top:16px !important;">
-                    💰 KELOLA KETERLAMBATAN
-                </a>
-            </div>
-        </div>
-    </div>
 </div>
 
 {{-- Rankings Row --}}
@@ -344,6 +307,105 @@
     </div>
 </div>
 @endif
+
+{{-- Report Cards --}}
+<div class="row g-4 mb-5">
+    {{-- Laporan Peminjaman --}}
+    <div class="col-xl col-lg-4 col-md-6">
+        <div class="card report-card reports-action-card h-100">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2">
+                    <span style="font-size:1.5rem;">📤</span>
+                    <div class="card-title" style="font-family:'Bangers',cursive; letter-spacing:2px; font-size:1.1rem; color:var(--comic-blue);">Laporan Peminjaman</div>
+                </div>
+            </div>
+            <div class="card-body d-flex flex-column">
+                <p class="text-muted fw-semibold mb-4" style="font-size:0.85rem;">Lihat semua data peminjaman buku dengan filter periode, kelas, dan kategori.</p>
+                <div class="d-flex gap-2 mt-auto">
+                    <a href="{{ route('admin.reports.borrowings.index') }}" class="btn btn-sm btn-dark flex-fill" style="border-radius:0; font-family:'Fredoka One',cursive; font-size:0.75rem;"><i class="ki-duotone ki-eye fs-5"></i> Lihat Laporan</a>
+                    <a href="{{ route('admin.reports.borrowings.pdf', request()->all()) }}" target="_blank" class="btn btn-sm flex-fill" style="background:var(--comic-blue)!important;color:#fff!important;border-color:var(--comic-dark)!important;box-shadow:2px 2px 0 var(--comic-dark)!important;border-radius:0;font-family:'Fredoka One',cursive;font-size:0.75rem;"><i class="ki-duotone ki-file-down fs-5"></i> PDF</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Laporan Pengembalian --}}
+    <div class="col-xl col-lg-4 col-md-6">
+        <div class="card report-card reports-action-card h-100">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2">
+                    <span style="font-size:1.5rem;">📥</span>
+                    <div class="card-title" style="font-family:'Bangers',cursive; letter-spacing:2px; font-size:1.1rem; color:var(--comic-green);">Laporan Pengembalian</div>
+                </div>
+            </div>
+            <div class="card-body d-flex flex-column">
+                <p class="text-muted fw-semibold mb-4" style="font-size:0.85rem;">Pantau semua pengembalian buku dengan filter periode dan kelas.</p>
+                <div class="d-flex gap-2 mt-auto">
+                    <a href="{{ route('admin.reports.borrowings.index', ['type' => 'return']) }}" class="btn btn-sm btn-dark flex-fill" style="border-radius:0; font-family:'Fredoka One',cursive; font-size:0.75rem;"><i class="ki-duotone ki-eye fs-5"></i> Lihat Laporan</a>
+                    <a href="{{ route('admin.reports.borrowings.pdf', array_merge(request()->all(), ['type' => 'return'])) }}" target="_blank" class="btn btn-sm flex-fill" style="background:var(--comic-green)!important;color:#fff!important;border-color:var(--comic-dark)!important;box-shadow:2px 2px 0 var(--comic-dark)!important;border-radius:0;font-family:'Fredoka One',cursive;font-size:0.75rem;"><i class="ki-duotone ki-file-down fs-5"></i> PDF</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Laporan Keterlambatan --}}
+    <div class="col-xl col-lg-4 col-md-6">
+        <div class="card report-card reports-action-card h-100">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2">
+                    <span style="font-size:1.5rem;">⚠️</span>
+                    <div class="card-title" style="font-family:'Bangers',cursive; letter-spacing:2px; font-size:1.1rem; color:var(--comic-red);">Laporan Keterlambatan</div>
+                </div>
+            </div>
+            <div class="card-body d-flex flex-column">
+                <p class="text-muted fw-semibold mb-4" style="font-size:0.85rem;">Cetak keterlambatan per anggota atau seluruh data keterlambatan.</p>
+                <div class="d-flex gap-2 mt-auto">
+                    <a href="{{ route('admin.reports.fines.index') }}" class="btn btn-sm btn-dark flex-fill" style="border-radius:0; font-family:'Fredoka One',cursive; font-size:0.75rem;"><i class="ki-duotone ki-eye fs-5"></i> Lihat Laporan</a>
+                    <a href="{{ route('admin.reports.fines.pdf', request()->all()) }}" target="_blank" class="btn btn-sm flex-fill" style="background:var(--comic-red)!important;color:#fff!important;border-color:var(--comic-dark)!important;box-shadow:2px 2px 0 var(--comic-dark)!important;border-radius:0;font-family:'Fredoka One',cursive;font-size:0.75rem;"><i class="ki-duotone ki-file-down fs-5"></i> PDF</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Laporan Data Buku --}}
+    <div class="col-xl col-lg-6 col-md-6">
+        <div class="card report-card reports-action-card h-100">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2">
+                    <span style="font-size:1.5rem;">📕</span>
+                    <div class="card-title" style="font-family:'Bangers',cursive; letter-spacing:2px; font-size:1.1rem; color:var(--comic-yellow);">Laporan Data Buku</div>
+                </div>
+            </div>
+            <div class="card-body d-flex flex-column">
+                <p class="text-muted fw-semibold mb-4" style="font-size:0.85rem;">Statistik buku paling sering dipinjam, kondisi normal, rusak, dan hilang.</p>
+                <div class="d-flex gap-2 mt-auto">
+                    <a href="{{ route('admin.reports.books.index') }}" class="btn btn-sm btn-dark flex-fill" style="border-radius:0; font-family:'Fredoka One',cursive; font-size:0.75rem;"><i class="ki-duotone ki-eye fs-5"></i> Lihat Laporan</a>
+                    <a href="{{ route('admin.reports.books.pdf', request()->all()) }}" target="_blank" class="btn btn-sm flex-fill" style="background:var(--comic-yellow)!important;color:var(--comic-dark)!important;border-color:var(--comic-dark)!important;box-shadow:2px 2px 0 var(--comic-dark)!important;border-radius:0;font-family:'Fredoka One',cursive;font-size:0.75rem;"><i class="ki-duotone ki-file-down fs-5"></i> PDF</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Laporan Data Anggota --}}
+    <div class="col-xl col-lg-6 col-md-6">
+        <div class="card report-card reports-action-card h-100">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2">
+                    <span style="font-size:1.5rem;">👥</span>
+                    <div class="card-title" style="font-family:'Bangers',cursive; letter-spacing:2px; font-size:1.1rem; color:#7c3aed;">Laporan Data Anggota</div>
+                </div>
+            </div>
+            <div class="card-body d-flex flex-column">
+                <p class="text-muted fw-semibold mb-4" style="font-size:0.85rem;">Daftar seluruh anggota perpustakaan lengkap dengan status keanggotaan.</p>
+                <div class="d-flex gap-2 mt-auto">
+                    <a href="{{ route('admin.reports.members.index') }}" class="btn btn-sm btn-dark flex-fill" style="border-radius:0; font-family:'Fredoka One',cursive; font-size:0.75rem;"><i class="ki-duotone ki-eye fs-5"></i> Lihat Laporan</a>
+                    <a href="{{ route('admin.reports.members.pdf', request()->all()) }}" target="_blank" class="btn btn-sm flex-fill" style="background:#7c3aed!important;color:#fff!important;border-color:var(--comic-dark)!important;box-shadow:2px 2px 0 var(--comic-dark)!important;border-radius:0;font-family:'Fredoka One',cursive;font-size:0.75rem;"><i class="ki-duotone ki-file-down fs-5"></i> PDF</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 @endsection
 
 @push('custom-js')

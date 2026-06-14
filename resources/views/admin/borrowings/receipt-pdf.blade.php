@@ -63,19 +63,16 @@ body {
 /* Status */
 .status-badge { display: inline-block; padding: 2px 8px; font-weight: bold; font-size: 11px; letter-spacing: 1px; border: 2px solid #000; }
 .status-active { background: #cce5ff; }
-.status-overdue { background: #f8d7da; }
 .status-returned { background: #d4edda; }
-
-/* Fine */
-.fine-box { background: #fff3cd; border: 2px solid #000; padding: 6px 8px; font-size: 11px; font-weight: bold; }
 </style>
 </head>
 <body>
 <div class="receipt-thermal">
     {{-- HEADER --}}
+    <div style="text-align:center; margin-bottom:8px;">
+        <img src="{{ asset('kop.png') }}" alt="Kop Surat" style="max-width:100%; height:auto;" />
+    </div>
     <div class="receipt-header">
-        <div class="app-name">{{ $app_name }}</div>
-        <div class="app-address">{{ $app_address }}{{ $app_phone ? ' | ' . $app_phone : '' }}</div>
         <div class="doc-title">STRUK PEMINJAMAN</div>
     </div>
 
@@ -142,18 +139,11 @@ body {
     @endif
 
     {{-- FINE INFO --}}
-    @if(isset($fine) && $fine)
-    <div class="fine-box" style="margin-top:6px;">
-        KETERLAMBATAN: Rp {{ $fine['amount'] }}
-        <span class="status-badge status-overdue" style="margin-left:6px; font-size:9px;">{{ $fine['status'] }}</span>
-    </div>
-    @endif
 
     {{-- FOOTER --}}
     <hr class="divider-thick">
     <div class="footer-note">
-        Harap kembalikan buku tepat waktu<br>
-        Buku terlambat akan dikenakan keterlambatan
+        Harap kembalikan buku tepat waktu
     </div>
     <div class="footer-time">
         Dicetak: {{ $printed_at }}<br>

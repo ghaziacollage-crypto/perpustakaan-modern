@@ -62,6 +62,14 @@
                                 <option value="unavailable">⛔ Unavailable</option>
                             </select>
                         </div>
+                        <div class="col-md-6">
+                            <label class="form-label" style="font-family:'Fredoka One',cursive; font-size:0.75rem; letter-spacing:1px; text-transform:uppercase; font-weight:900;">📦 KONDISI</label>
+                            <select name="kondisi" class="form-select" required>
+                                <option value="normal">✅ Normal</option>
+                                <option value="rusak">⚠️ Rusak</option>
+                                <option value="hilang">❌ Hilang</option>
+                            </select>
+                        </div>
                         <div class="col-12">
                             <label class="form-label" style="font-family:'Fredoka One',cursive; font-size:0.75rem; letter-spacing:1px; text-transform:uppercase; font-weight:900;">🖼️ SAMPUL BUKU</label>
                             <input type="file" name="cover" class="form-control" accept="image/*"/>

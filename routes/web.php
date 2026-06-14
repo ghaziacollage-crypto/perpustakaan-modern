@@ -4,14 +4,18 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\BookController;
+use App\Http\Controllers\Admin\BookReportController;
 use App\Http\Controllers\Admin\BorrowingController;
 use App\Http\Controllers\Admin\BorrowingLookupController;
+use App\Http\Controllers\Admin\BorrowingReportController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ExportController;
 use App\Http\Controllers\Admin\FineController;
+use App\Http\Controllers\Admin\FineReportController;
 use App\Http\Controllers\Admin\HeroSlideController;
 use App\Http\Controllers\Admin\MemberController as AdminMemberController;
+use App\Http\Controllers\Admin\MemberReportController;
 use App\Http\Controllers\Admin\QrScanController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\ReturnController;
@@ -84,8 +88,6 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::resource('users', UserController::class);
 
     Route::get('fines', [FineController::class, 'index'])->name('fines.index');
-    Route::post('fines/{fine}/mark-as-paid', [FineController::class, 'markAsPaid'])->name('fines.mark-as-paid');
-    Route::post('fines/{fine}/mark-as-unpaid', [FineController::class, 'markAsUnpaid'])->name('fines.mark-as-unpaid');
 
     Route::get('borrowings', [BorrowingController::class, 'index'])->name('borrowings.index');
     Route::get('borrowings/create', [BorrowingController::class, 'create'])->name('borrowings.create');
@@ -107,6 +109,24 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::get('scan', [QrScanController::class, 'index'])->name('scan.index');
 
     Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
+
+    // Fine report
+    Route::get('reports/fines', [FineReportController::class, 'index'])->name('reports.fines.index');
+    Route::get('reports/fines/export-pdf', [FineReportController::class, 'exportPdf'])->name('reports.fines.pdf');
+    Route::get('reports/fines/by-member', [FineReportController::class, 'byMember'])->name('reports.fines.by-member');
+    Route::get('reports/fines/by-member/{member}/pdf', [FineReportController::class, 'pdfByMember'])->name('reports.fines.by-member-pdf');
+
+    // Book report
+    Route::get('reports/books', [BookReportController::class, 'index'])->name('reports.books.index');
+    Route::get('reports/books/export-pdf', [BookReportController::class, 'exportPdf'])->name('reports.books.pdf');
+
+    // Borrowing report
+    Route::get('reports/borrowings', [BorrowingReportController::class, 'index'])->name('reports.borrowings.index');
+    Route::get('reports/borrowings/export-pdf', [BorrowingReportController::class, 'exportPdf'])->name('reports.borrowings.pdf');
+
+    // Member report
+    Route::get('reports/members', [MemberReportController::class, 'index'])->name('reports.members.index');
+    Route::get('reports/members/export-pdf', [MemberReportController::class, 'exportPdf'])->name('reports.members.pdf');
 
     Route::get('export/books', [ExportController::class, 'books'])->name('export.books');
     Route::get('export/members', [ExportController::class, 'members'])->name('export.members');

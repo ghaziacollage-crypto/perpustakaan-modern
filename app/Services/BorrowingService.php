@@ -7,14 +7,11 @@ namespace App\Services;
 use App\Enums\BookStatus;
 use App\Enums\BorrowingDetailStatus;
 use App\Enums\BorrowingStatus;
-use App\Enums\FineStatus;
 use App\Models\Book;
 use App\Models\BookReturn;
 use App\Models\Borrowing;
 use App\Models\BorrowingDetail;
-use App\Models\Fine;
 use App\Models\Member;
-use App\Models\Setting;
 use Exception;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -178,8 +175,7 @@ class BorrowingService
                     'status' => $returnDate->gt($borrowing->due_date) ? BorrowingStatus::Late : BorrowingStatus::Returned,
                 ]);
 
-                // Handle fine if late
-                $this->handleFine($borrowing);
+                // No fines - library does not charge penalties
             }
 
             return $borrowing->refresh();
@@ -434,30 +430,6 @@ class BorrowingService
         $count = Borrowing::whereDate('created_at', now()->toDateString())->count() + 1;
 
         return 'TRX-'.$date.'-'.str_pad((string) $count, 4, '0', STR_PAD_LEFT);
-    }
-
-    private function handleFine(Borrowing $borrowing): void
-    {
-        if ($borrowing->return_date && $borrowing->return_date->gt($borrowing->due_date)) {
-            $daysLate = (int) $borrowing->due_date->diffInDays($borrowing->return_date);
-            if ($daysLate <= 0) {
-                return;
-            }
-
-            $amountPerDay = (float) Setting::getValue('fine_amount_per_day', 1000);
-            $totalAmount = $amountPerDay * $daysLate;
-
-            Fine::updateOrCreate(
-                ['borrowing_id' => $borrowing->id],
-                [
-                    'member_id' => $borrowing->member_id,
-                    'days_late' => $daysLate,
-                    'amount_per_day' => $amountPerDay,
-                    'total_amount' => $totalAmount,
-                    'status' => FineStatus::Unpaid,
-                ]
-            );
-        }
     }
 
     private function sendBorrowedNotification(Member $member, Borrowing $borrowing): void

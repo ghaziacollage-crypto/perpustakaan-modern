@@ -239,6 +239,31 @@
                             @endif
                         </div>
 
+                        {{-- Kondisi --}}
+                        <div class="col-md-6">
+                            <label class="form-label-comic">
+                                📦 KONDISI <span class="required-star">*</span>
+                            </label>
+                            <select name="kondisi"
+                                class="form-select @if($errors?->has('kondisi')) is-invalid @endif" required>
+                                <option value="normal"
+                                    {{ old('kondisi', 'normal') === 'normal' ? 'selected' : '' }}>
+                                    ✅ Normal
+                                </option>
+                                <option value="rusak"
+                                    {{ old('kondisi') === 'rusak' ? 'selected' : '' }}>
+                                    ⚠️ Rusak
+                                </option>
+                                <option value="hilang"
+                                    {{ old('kondisi') === 'hilang' ? 'selected' : '' }}>
+                                    ❌ Hilang
+                                </option>
+                            </select>
+                            @if($errors?->has('kondisi'))
+                                <div class="invalid-feedback d-block">{{ $errors->first('kondisi') }}</div>
+                            @endif
+                        </div>
+
                         {{-- Sampul Buku --}}
                         <div class="col-12">
                             <label class="form-label-comic">🖼️ SAMPUL BUKU</label>

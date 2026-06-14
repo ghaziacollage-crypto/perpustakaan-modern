@@ -105,12 +105,7 @@ class MemberController extends Controller
             ->take(5)
             ->get();
 
-        $unpaidFines = $member->fines()
-            ->where('status', 'unpaid')
-            ->latest()
-            ->get();
-
-        return view('admin.members.show', compact('member', 'recentBorrowings', 'unpaidFines'));
+        return view('admin.members.show', compact('member', 'recentBorrowings'));
     }
 
     public function printCard(Member $member): View
