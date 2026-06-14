@@ -51,7 +51,6 @@
 @section('content')
 <div class="d-flex flex-wrap gap-3 mb-5">
     <a href="{{ route('admin.whatsapp.index') }}" class="btn btn-dark" style="border-radius:0;">Test WhatsApp API</a>
-    <a href="{{ route('admin.settings.whatsapp') }}" class="btn btn-dark" style="border-radius:0;">Pengaturan API</a>
 </div>
 
 @if($summary)

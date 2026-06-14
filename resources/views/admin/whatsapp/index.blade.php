@@ -54,7 +54,6 @@
 @section('content')
 <div class="d-flex flex-wrap gap-3 mb-5">
     <a href="{{ route('admin.whatsapp.bulk') }}" class="btn btn-comic">Pengiriman Massal</a>
-    <a href="{{ route('admin.settings.whatsapp') }}" class="btn btn-dark" style="border-radius:0;">Pengaturan API</a>
 </div>
 
 <div class="row g-5">
@@ -66,7 +65,7 @@
             <div class="card-body p-4">
                 <div class="row g-3 mb-4">
                     <div class="col-12">
-                        <div class="wa-status">Status file config: {{ $connection['file_status'] }}</div>
+                        <div class="wa-status">Sumber konfigurasi: {{ $connection['config_source'] }}</div>
                     </div>
                     <div class="col-12">
                         <div class="wa-status">API aktif: {{ $connection['is_active'] ? 'Ya' : 'Tidak' }}</div>
