@@ -76,6 +76,9 @@ class WhatsAppSettingsService
     public function getHealthUrls(): array
     {
         $baseUrl = $this->getBaseUrl();
+        if ($baseUrl === '') {
+            return [];
+        }
 
         return collect(config('whatsapp.health_paths', []))
             ->map(fn (string $path): string => $baseUrl.'/'.ltrim($path, '/'))
