@@ -12,8 +12,6 @@ use App\Http\Controllers\Admin\ExportController;
 use App\Http\Controllers\Admin\FineController;
 use App\Http\Controllers\Admin\HeroSlideController;
 use App\Http\Controllers\Admin\MemberController as AdminMemberController;
-use App\Http\Controllers\MemberController;
-use App\Http\Controllers\ScanController;
 use App\Http\Controllers\Admin\QrScanController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\ReturnController;
@@ -22,6 +20,8 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\WhatsAppSettingsController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LandingPageController;
+use App\Http\Controllers\MemberController;
+use App\Http\Controllers\ScanController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -65,6 +65,7 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::resource('books', BookController::class)->except(['edit']);
     Route::get('books/{book}/edit', [BookController::class, 'edit'])->name('books.edit');
     Route::get('books/create', [BookController::class, 'create'])->name('books.create');
+    Route::get('books/{book}/qr-code', [BookController::class, 'showQrCode'])->name('books.qr-code');
     Route::get('books/{book}/qr-modal', [BookController::class, 'qrModal'])->name('books.qr-modal');
     Route::post('books/{book}/qr-code', [BookController::class, 'regenerateQrCode'])->name('books.regenerate-qr');
     Route::post('books/bulk-qr', [BookController::class, 'bulkGenerateQr'])->name('books.bulk-qr');
@@ -74,6 +75,7 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::get('members/{member}', [AdminMemberController::class, 'show'])->name('members.show');
     Route::get('members/{member}/print', [AdminMemberController::class, 'printCard'])->name('members.print-card');
     Route::post('members/{member}/qr-code', [AdminMemberController::class, 'regenerateQr'])->name('members.regenerate-qr');
+    Route::get('members/bulk-qr', [AdminMemberController::class, 'bulkQrPage'])->name('members.bulk-qr');
     Route::post('members/bulk-qr-regenerate', [AdminMemberController::class, 'bulkRegenerateQr'])->name('members.bulk-qr-regenerate');
     Route::post('members/{member}/approve', [AdminMemberController::class, 'approve'])->name('members.approve');
     Route::post('members/{member}/reject', [AdminMemberController::class, 'reject'])->name('members.reject');

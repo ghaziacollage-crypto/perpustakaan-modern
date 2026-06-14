@@ -4,17 +4,17 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
 use App\Enums\MemberStatus;
+use App\Http\Controllers\Controller;
 use App\Http\Requests\Members\StoreMemberRequest;
 use App\Http\Requests\Members\UpdateMemberRequest;
 use App\Models\Member;
 use App\Services\AuditService;
 use App\Services\MemberPhotoService;
 use App\Services\MemberQrCodeService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
 use Illuminate\View\View;
 
 class MemberController extends Controller
@@ -23,8 +23,7 @@ class MemberController extends Controller
         private readonly AuditService $audit,
         private readonly MemberQrCodeService $memberQr,
         private readonly MemberPhotoService $memberPhoto
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): View
     {
@@ -134,6 +133,19 @@ class MemberController extends Controller
             ->with('success', "QR Code berhasil disinkronisasi untuk {$count} anggota.");
     }
 
+    public function bulkQrPage(): View
+    {
+        $totalMembers = Member::count();
+        $membersWithQr = Member::whereNotNull('qr_code')->whereRaw('qr_code != ""')->count();
+        $membersWithoutQr = Member::whereNull('qr_code')->orWhereRaw('qr_code = ""')->count();
+
+        return view('admin.members.bulk-qr', compact(
+            'totalMembers',
+            'membersWithQr',
+            'membersWithoutQr'
+        ));
+    }
+
     /**
      * POST /admin/members/{member}/approve
      * Approve a pending member registration
@@ -192,11 +204,11 @@ class MemberController extends Controller
     {
         $member = Member::where('member_code', $request->get('code'))->first();
 
-        if (!$member) {
+        if (! $member) {
             return response()->json(['error' => 'Anggota tidak ditemukan'], 404);
         }
 
-        if (!$member->isActive()) {
+        if (! $member->isActive()) {
             return response()->json(['error' => 'Anggota tidak aktif'], 403);
         }
 

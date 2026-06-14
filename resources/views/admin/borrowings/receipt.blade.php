@@ -139,7 +139,7 @@
     {{-- FINE INFO --}}
     @if(isset($fine) && $fine)
     <div class="fine-box" style="margin-top:6px;">
-        💰 DENDA: Rp {{ $fine['amount'] }}
+        💰 KETERLAMBATAN: Rp {{ $fine['amount'] }}
         <span class="status-badge status-overdue" style="margin-left:6px; font-size:9px;">{{ $fine['status'] }}</span>
     </div>
     @endif
@@ -148,7 +148,7 @@
     <hr class="divider-thick">
     <div class="footer-note">
         📌 Harap kembalikan buku tepat waktu<br>
-        Buku terlambat akan dikenakan denda
+        Buku terlambat akan dikenakan keterlambatan
     </div>
     <div class="footer-time">
         Dicetak: {{ $printed_at }}<br>

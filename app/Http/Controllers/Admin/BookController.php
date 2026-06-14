@@ -11,9 +11,9 @@ use App\Models\Book;
 use App\Models\Category;
 use App\Services\AuditService;
 use App\Services\BookService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
 use Illuminate\View\View;
 
 class BookController extends Controller
@@ -121,7 +121,7 @@ class BookController extends Controller
             'author' => $book->author,
             'rack_location' => $book->rack_location,
             'qr_code' => $book->qr_code,
-            'qr_url' => $book->qr_code ? asset('storage/' . $book->qr_code) : null,
+            'qr_url' => $book->qr_code ? asset('storage/'.$book->qr_code) : null,
             'category_name' => $book->category?->name,
         ]);
     }
@@ -131,6 +131,13 @@ class BookController extends Controller
         $service->regenerateQrCode($book);
 
         return redirect()->back()->with('success', 'QR Code berhasil digenerate ulang.');
+    }
+
+    public function showQrCode(Book $book): View
+    {
+        $book->load('category');
+
+        return view('admin.books.print-qr', compact('book'));
     }
 
     public function bulkGenerateQr(BookService $service): RedirectResponse
@@ -162,8 +169,8 @@ class BookController extends Controller
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('book_code', 'like', "%{$search}%")
-                  ->orWhere('author', 'like', "%{$search}%");
+                    ->orWhere('book_code', 'like', "%{$search}%")
+                    ->orWhere('author', 'like', "%{$search}%");
             });
         }
 
@@ -180,32 +187,32 @@ class BookController extends Controller
     {
         $rows = '';
         foreach ($books as $book) {
-            $qrUrl = asset('storage/' . $book->qr_code);
+            $qrUrl = asset('storage/'.$book->qr_code);
             $rows .= '<tr>
                 <td>
                     <div style="text-align:center;page-break-inside:avoid;">
-                        <img src="' . e($qrUrl) . '" alt="QR" style="width:130px;height:130px;display:block;margin:0 auto;"/>
+                        <img src="'.e($qrUrl).'" alt="QR" style="width:130px;height:130px;display:block;margin:0 auto;"/>
                         <div style="font-family:Bangers,sans-serif;font-size:11px;color:#aaa;margin-top:4px;text-transform:uppercase;letter-spacing:1px;">SCAN</div>
                     </div>
                 </td>
                 <td style="padding-left:12px;vertical-align:top;">
-                    <div style="font-family:Bangers,sans-serif;font-size:16px;color:#1A1A2E;line-height:1.3;margin-bottom:8px;max-width:260px;">' . e($book->title) . '</div>
+                    <div style="font-family:Bangers,sans-serif;font-size:16px;color:#1A1A2E;line-height:1.3;margin-bottom:8px;max-width:260px;">'.e($book->title).'</div>
                     <div style="display:flex;flex-direction:column;gap:4px;">
                         <div style="display:flex;gap:6px;">
                             <span style="font-family:Bangers,sans-serif;font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:1px;min-width:50px;">KODE</span>
-                            <span style="font-family:Bangers,sans-serif;font-size:12px;color:#1A1A2E;font-weight:900;">' . e($book->book_code) . '</span>
+                            <span style="font-family:Bangers,sans-serif;font-size:12px;color:#1A1A2E;font-weight:900;">'.e($book->book_code).'</span>
                         </div>
                         <div style="display:flex;gap:6px;">
                             <span style="font-family:Bangers,sans-serif;font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:1px;min-width:50px;">ISBN</span>
-                            <span style="font-family:Bangers,sans-serif;font-size:12px;color:#888;">' . e($book->isbn ?? '-') . '</span>
+                            <span style="font-family:Bangers,sans-serif;font-size:12px;color:#888;">'.e($book->isbn ?? '-').'</span>
                         </div>
                         <div style="display:flex;gap:6px;">
                             <span style="font-family:Bangers,sans-serif;font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:1px;min-width:50px;">PENULIS</span>
-                            <span style="font-family:Bangers,sans-serif;font-size:12px;color:#888;">' . e($book->author ?? '-') . '</span>
+                            <span style="font-family:Bangers,sans-serif;font-size:12px;color:#888;">'.e($book->author ?? '-').'</span>
                         </div>
                         <div style="display:flex;gap:6px;">
                             <span style="font-family:Bangers,sans-serif;font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:1px;min-width:50px;">RAK</span>
-                            <span style="font-family:Bangers,sans-serif;font-size:12px;color:#888;">' . e($book->rack_location ?? '-') . '</span>
+                            <span style="font-family:Bangers,sans-serif;font-size:12px;color:#888;">'.e($book->rack_location ?? '-').'</span>
                         </div>
                     </div>
                 </td>
@@ -233,9 +240,9 @@ td{border:2px solid #1A1A2E;padding:14px 12px;background:#fff;vertical-align:top
 <body>
 <button class="print-btn" onclick="window.print()">🖨️ PRINT QR CODES</button>
 <h1>📚 DAFTAR QR CODE BUKU</h1>
-<div class="sub">Total: ' . $books->count() . ' buku — Generated: ' . now()->locale('id')->translatedFormat('d F Y, H:i') . ' WIB</div>
+<div class="sub">Total: '.$books->count().' buku — Generated: '.now()->locale('id')->translatedFormat('d F Y, H:i').' WIB</div>
 <table>
-' . $rows . '
+'.$rows.'
 </table>
 </body>
 </html>';
@@ -245,11 +252,11 @@ td{border:2px solid #1A1A2E;padding:14px 12px;background:#fff;vertical-align:top
     {
         $book = Book::with('category')->where('book_code', $request->get('code'))->first();
 
-        if (!$book) {
+        if (! $book) {
             return response()->json(['error' => 'Buku tidak ditemukan'], 404);
         }
 
-        if (!$book->isAvailable()) {
+        if (! $book->isAvailable()) {
             return response()->json(['error' => 'Buku tidak tersedia untuk dipinjam'], 409);
         }
 

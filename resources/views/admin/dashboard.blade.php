@@ -575,7 +575,7 @@
     </div>
 </div>
 
-{{-- Row 4: Quick Actions + Denda ─────────────────────────────────── --}}
+{{-- Row 4: Quick Actions + Keterlambatan ────────────────────────── --}}
 <div class="row g-3">
     <div class="col-lg-5">
         <div class="card dash-chart-card">
@@ -620,7 +620,7 @@
                         <span class="qab-icon">📥</span>
                         <span class="qab-text">
                             <strong>Proses Pengembalian</strong>
-                            <small>Return buku + hitung denda</small>
+                            <small>Return buku + hitung keterlambatan</small>
                         </span>
                         <span class="qab-arrow">→</span>
                     </a>
@@ -635,8 +635,8 @@
                     <a href="{{ route('admin.fines.index') }}" class="quick-action-btn qab-danger">
                         <span class="qab-icon">💰</span>
                         <span class="qab-text">
-                            <strong>Kelola Denda</strong>
-                            <small>Lihat & tagih denda terlambat</small>
+                            <strong>Kelola Keterlambatan</strong>
+                            <small>Lihat & tagih keterlambatan terlambat</small>
                         </span>
                         <span class="qab-arrow">→</span>
                     </a>
@@ -648,7 +648,7 @@
     <div class="col-lg-7">
         <div class="card dash-chart-card">
             <div class="card-header d-flex align-items-center justify-content-between">
-                <div class="card-title">💰 DENDA BELUM LUNAS</div>
+                <div class="card-title">💰 KETERLAMBATAN BELUM LUNAS</div>
                 <a href="{{ route('admin.fines.index') }}"
                     style="background:var(--comic-yellow); color:var(--comic-dark); font-family:'Fredoka One',cursive;
                            font-size:0.68rem; border-radius:0; border:2px solid var(--comic-dark);
@@ -711,7 +711,7 @@
                 </div>
                 @else
                 <div class="empty-state" style="padding:24px; color:var(--comic-green);">
-                    🎉 SEMUA DENDA SUDAH LUNAS!
+                    🎉 SEMUA KETERLAMBATAN SUDAH LUNAS!
                 </div>
                 @endif
             </div>

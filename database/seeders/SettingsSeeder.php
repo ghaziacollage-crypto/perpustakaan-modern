@@ -87,7 +87,7 @@ class SettingsSeeder extends Seeder
                 'value' => '1000',
                 'type' => 'number',
                 'group' => 'fine',
-                'label' => 'Denda Per Hari',
+                'label' => 'Keterlambatan Per Hari',
             ],
         ];
 

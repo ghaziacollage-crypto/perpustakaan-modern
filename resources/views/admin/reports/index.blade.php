@@ -115,7 +115,7 @@
     </div>
     <div class="col-6 col-lg-3">
         <div class="summary-stat-card" style="border-top:5px solid var(--comic-green) !important;">
-            <div class="ssc-label">💰 TOTAL DENDA</div>
+            <div class="ssc-label">💰 TOTAL KETERLAMBATAN</div>
             <div class="ssc-value" style="color:var(--comic-green); font-size:1.6rem;">Rp {{ number_format($fineSummary['paid'] + $fineSummary['unpaid'], 0, ',', '.') }}</div>
             <div class="ssc-icon">💰</div>
         </div>
@@ -142,14 +142,14 @@
     <div class="col-lg-4">
         <div class="card report-card h-100">
             <div class="card-header">
-                <div class="card-title">💰 RINGKASAN DENDA</div>
+                <div class="card-title">💰 RINGKASAN KETERLAMBATAN</div>
             </div>
             <div class="card-body p-4">
                 <div class="d-flex flex-column gap-3">
                     <div style="background:#fff8f0; border:2px solid var(--comic-dark); box-shadow:3px 3px 0 var(--comic-dark); padding:12px 14px;">
                         <div class="d-flex justify-content-between align-items-center">
                             <span style="font-size:0.78rem; font-weight:900; color:#b07d00;">⏰ BELUM LUNAS</span>
-                            <span style="font-family:'Bangers',cursive; font-size:1.2rem; color:#b07d00;">{{ $fineSummary['pending_count'] }} denda</span>
+                            <span style="font-family:'Bangers',cursive; font-size:1.2rem; color:#b07d00;">{{ $fineSummary['pending_count'] }} keterlambatan</span>
                         </div>
                         <div style="font-family:'Bangers',cursive; font-size:1.1rem; color:#b07d00; margin-top:4px;">
                             Rp {{ number_format($fineSummary['unpaid'], 0, ',', '.') }}
@@ -158,7 +158,7 @@
                     <div style="background:#f0fff4; border:2px solid var(--comic-dark); box-shadow:3px 3px 0 var(--comic-dark); padding:12px 14px;">
                         <div class="d-flex justify-content-between align-items-center">
                             <span style="font-size:0.78rem; font-weight:900; color:var(--comic-green);">✅ SUDAH LUNAS</span>
-                            <span style="font-family:'Bangers',cursive; font-size:1.2rem; color:var(--comic-green);">{{ $fineSummary['paid_count'] }} denda</span>
+                            <span style="font-family:'Bangers',cursive; font-size:1.2rem; color:var(--comic-green);">{{ $fineSummary['paid_count'] }} keterlambatan</span>
                         </div>
                         <div style="font-family:'Bangers',cursive; font-size:1.1rem; color:var(--comic-green); margin-top:4px;">
                             Rp {{ number_format($fineSummary['paid'], 0, ',', '.') }}
@@ -172,7 +172,7 @@
                     </div>
                 </div>
                 <a href="{{ route('admin.fines.index') }}" class="btn btn-comic mt-4 w-100" style="margin-top:16px !important;">
-                    💰 KELOLA DENDA
+                    💰 KELOLA KETERLAMBATAN
                 </a>
             </div>
         </div>

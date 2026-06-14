@@ -42,7 +42,7 @@ class FineController extends Controller
             'paid_at' => now(),
         ]);
 
-        return redirect()->back()->with('success', 'Denda berhasil ditandai lunas.');
+        return redirect()->back()->with('success', 'Keterlambatan berhasil ditandai lunas.');
     }
 
     public function markAsUnpaid(Fine $fine): RedirectResponse
@@ -52,6 +52,6 @@ class FineController extends Controller
             'paid_at' => null,
         ]);
 
-        return redirect()->back()->with('success', 'Status denda berhasil dikembalikan.');
+        return redirect()->back()->with('success', 'Status keterlambatan berhasil dikembalikan.');
     }
 }

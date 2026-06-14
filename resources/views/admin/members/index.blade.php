@@ -255,13 +255,9 @@
             <span class="fw-bold text-white" style="font-family:'Bangers',cursive; letter-spacing:2px; font-size:1.1rem;">👥 DAFTAR ANGGOTA</span>
         </div>
         <div class="card-toolbar d-flex align-items-center gap-2">
-            <form action="{{ route('admin.members.bulk-qr-regenerate') }}" method="POST"
-                  onsubmit="return confirm('Sinkronkan ulang semua QR Code anggota?\nIni akan meregenerasi QR untuk semua member.');">
-                @csrf
-                <button type="submit" class="btn-toolbar-export" style="background: #27ae60; color: #fff;">
-                    <i class="ki-duotone ki-arrows-circle fs-2"></i> Sinkronisasi QR
-                </button>
-            </form>
+            <a href="{{ route('admin.members.bulk-qr') }}" class="btn-toolbar-export" style="background: #27ae60; color: #fff; text-decoration:none;">
+                <i class="ki-duotone ki-arrows-circle fs-2"></i> Sinkronisasi QR
+            </a>
             <a href="{{ route('admin.export.members') }}" class="btn-toolbar-export">
                 <i class="ki-duotone ki-tablet-ks fs-2"></i> Export
             </a>

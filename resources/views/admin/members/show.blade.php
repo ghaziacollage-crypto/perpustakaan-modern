@@ -368,12 +368,12 @@
     <div class="stat-box" style="border-top-color: var(--comic-red);">
         <div class="stat-icon">⚠️</div>
         <div class="stat-value">{{ number_format($unpaidFines->count()) }}</div>
-        <div class="stat-label">Denda Aktif</div>
+        <div class="stat-label">Keterlambatan Aktif</div>
     </div>
     <div class="stat-box" style="border-top-color: var(--comic-green);">
         <div class="stat-icon">✅</div>
         <div class="stat-value">{{ number_format($member->fines_count) }}</div>
-        <div class="stat-label">Total Denda</div>
+        <div class="stat-label">Total Keterlambatan</div>
     </div>
 </div>
 
@@ -565,11 +565,11 @@
         </div>
         @endif
 
-        {{-- Info Section: Denda Aktif --}}
+        {{-- Info Section: Keterlambatan Aktif --}}
         @if($unpaidFines->count())
         <div class="info-section">
             <div class="info-section-header">
-                <span class="section-title">⚠️ DENDA AKTIF</span>
+                <span class="section-title">⚠️ KETERLAMBATAN AKTIF</span>
                 <a href="{{ route('admin.fines.index', ['member' => $member->id]) }}"
                     style="background:var(--comic-red); color:#fff; border-radius:0; border:2px solid var(--comic-dark);
                            box-shadow:2px 2px 0 var(--comic-dark); font-family:'Fredoka One',cursive; font-size:0.72rem;

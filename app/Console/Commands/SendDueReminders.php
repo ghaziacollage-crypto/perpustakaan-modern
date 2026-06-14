@@ -29,6 +29,7 @@ class SendDueReminders extends Command
 
         if ($borrowings->isEmpty()) {
             $this->info("Tidak ada peminjaman yang akan jatuh tempo dalam {$days} hari.");
+
             return Command::SUCCESS;
         }
 
@@ -38,9 +39,10 @@ class SendDueReminders extends Command
         foreach ($borrowings as $borrowing) {
             $member = $borrowing->member;
 
-            if (!$member?->whatsapp) {
+            if (! $member?->whatsapp) {
                 $this->warn("Anggota {$member?->name} tidak memiliki nomor WhatsApp.");
                 $failed++;
+
                 continue;
             }
 
@@ -51,8 +53,8 @@ class SendDueReminders extends Command
             $message .= "Pengingat: Buku yang Anda pinjam akan jatuh tempo dalam *{$days} hari*.\n\n";
             $message .= "📚 Buku: {$bookTitles}\n";
             $message .= "📅 Jatuh Tempo: {$dueDateFormatted}\n\n";
-            $message .= "Harap kembalikan tepat waktu agar tidak terkena denda.\n\n";
-            $message .= "Terima kasih! 🙏";
+            $message .= "Harap kembalikan tepat waktu agar tidak terkena keterlambatan.\n\n";
+            $message .= 'Terima kasih! 🙏';
 
             $success = $whatsApp->sendMessage($member, $member->whatsapp, $message);
 

@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Denda')
-@section('page-title', 'Denda')
+@section('title', 'Keterlambatan')
+@section('page-title', 'Keterlambatan')
 
 @section('breadcrumb')
 <ul class="breadcrumb breadcrumb-separatorless fw-semibold fs-7 pt-1">
@@ -11,7 +11,7 @@
     <li class="breadcrumb-item"><span class="bullet bg-gray-300 w-5px h-2px"></span></li>
     <li class="breadcrumb-item text-muted">Transaksi</li>
     <li class="breadcrumb-item"><span class="bullet bg-gray-300 w-5px h-2px"></span></li>
-    <li class="breadcrumb-item text-gray-900">Denda</li>
+    <li class="breadcrumb-item text-gray-900">Keterlambatan</li>
 </ul>
 @endsection
 
@@ -54,7 +54,7 @@
             <div class="d-flex align-items-center gap-3">
                 <div class="stat-icon">💰</div>
                 <div>
-                    <div class="stat-label">TOTAL DENDA</div>
+                    <div class="stat-label">TOTAL KETERLAMBATAN</div>
                     <div class="stat-value" style="color:var(--comic-blue);">
                         Rp {{ number_format((float) $totalAll, 0, ',', '.') }}
                     </div>
@@ -67,7 +67,7 @@
 <div class="card">
     <div class="card-header border-0 pt-6">
         <div class="card-title">
-            <span class="fw-bold text-white" style="font-family:'Bangers',cursive; letter-spacing:2px; font-size:1.1rem;">💰 MANAJEMEN DENDA</span>
+            <span class="fw-bold text-white" style="font-family:'Bangers',cursive; letter-spacing:2px; font-size:1.1rem;">💰 MANAJEMEN KETERLAMBATAN</span>
         </div>
         <div class="card-toolbar d-flex align-items-center gap-2">
             <a href="{{ route('admin.fines.index') }}"
@@ -180,8 +180,8 @@
                         <td colspan="8">
                             <div class="comic-empty">
                                 <span class="empty-emoji">🎉</span>
-                                <div class="empty-title">TIDAK ADA DATA DENDA</div>
-                                <div class="empty-sub">Semua denda sudah lunas atau belum ada keterlambatan</div>
+                                <div class="empty-title">TIDAK ADA DATA KETERLAMBATAN</div>
+                                <div class="empty-sub">Semua keterlambatan sudah lunas atau belum ada keterlambatan</div>
                             </div>
                         </td>
                     </tr>
@@ -216,7 +216,7 @@ document.addEventListener('DOMContentLoaded', function () {
             var form = btn.closest('form');
             Swal.fire({
                 title: 'Tandai lunas?',
-                text: 'Denda akan ditandai sebagai sudah lunas.',
+                text: 'Keterlambatan akan ditandai sebagai sudah lunas.',
                 icon: 'success',
                 showCancelButton: true,
                 confirmButtonText: 'Ya, lunas!',
@@ -235,7 +235,7 @@ document.addEventListener('DOMContentLoaded', function () {
             var form = btn.closest('form');
             Swal.fire({
                 title: 'Batalkan?',
-                text: 'Status denda akan dikembalikan ke belum lunas.',
+                text: 'Status keterlambatan akan dikembalikan ke belum lunas.',
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonText: 'Ya, batalkan!',

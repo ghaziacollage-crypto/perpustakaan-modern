@@ -93,7 +93,7 @@
                 <span class="menu-icon">
                     <i class="ki-duotone ki-wallet fs-2"><span class="path1"></span><span class="path2"></span></i>
                 </span>
-                <span class="menu-title">Denda</span>
+                <span class="menu-title">Keterlambatan</span>
             </a>
         </div>
 
