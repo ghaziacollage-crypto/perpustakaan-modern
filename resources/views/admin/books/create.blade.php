@@ -218,6 +218,18 @@
                             @endif
                         </div>
 
+                        {{-- Sinopsis --}}
+                        <div class="col-12">
+                            <label class="form-label-comic">📝 SINOPSIS</label>
+                            <textarea name="synopsis"
+                                class="form-control @if($errors?->has('synopsis')) is-invalid @endif"
+                                rows="5"
+                                placeholder="Tulis ringkasan atau deskripsi singkat buku...">{{ old('synopsis') }}</textarea>
+                            @if($errors?->has('synopsis'))
+                                <div class="invalid-feedback d-block">{{ $errors->first('synopsis') }}</div>
+                            @endif
+                        </div>
+
                         {{-- Status --}}
                         <div class="col-md-6">
                             <label class="form-label-comic">

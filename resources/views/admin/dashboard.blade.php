@@ -270,7 +270,7 @@
         </a>
     </div>
     <div class="col-6 col-lg-3">
-        <a href="{{ route('admin.returns.index') }}" class="comic-stat-card csc-borrowed">
+        <a href="{{ route('admin.borrowings.index', ['status' => 'active']) }}" class="comic-stat-card csc-borrowed">
             <div class="csc-icon">📤</div>
             <div class="csc-body">
                 <div class="csc-number">{{ number_format($borrowedBooks) }}</div>
@@ -280,7 +280,7 @@
         </a>
     </div>
     <div class="col-6 col-lg-3">
-        <a href="{{ route('admin.returns.index') }}" class="comic-stat-card csc-overdue">
+        <a href="{{ route('admin.borrowings.index', ['status' => 'late']) }}" class="comic-stat-card csc-overdue">
             <div class="csc-icon">⏰</div>
             <div class="csc-body">
                 <div class="csc-number">{{ number_format($overdueBooks) }}</div>
@@ -374,7 +374,7 @@
         <div class="card dash-chart-card">
             <div class="card-header d-flex align-items-center justify-content-between">
                 <div class="card-title">📋 TRANSAKSI TERBARU</div>
-                <a href="{{ route('admin.returns.index') }}"
+                <a href="{{ route('admin.borrowings.index') }}"
                     style="background:var(--comic-orange); color:#fff; font-family:'Fredoka One',cursive;
                            font-size:0.68rem; border-radius:0; border:2px solid var(--comic-dark);
                            box-shadow:2px 2px 0 var(--comic-dark); padding:4px 10px; text-decoration:none;">
@@ -507,7 +507,7 @@
                                 </td>
                                 <td>
                                     <div class="d-flex gap-2">
-                                        <form action="{{ route('api.borrowings.approve', $pending->id) }}" method="POST" class="d-inline form-approve">
+                                        <form action="{{ route('admin.borrowings.approve', $pending->id) }}" method="POST" class="d-inline form-approve">
                                             @csrf
                                             <button type="submit" class="btn btn-sm fw-bold btn-approve"
                                                 style="background:#27ae60; color:#fff; border:2px solid var(--comic-dark); box-shadow:2px 2px 0 var(--comic-dark); border-radius:0; font-size:0.72rem;"
@@ -515,7 +515,7 @@
                                                 ✅ Setuju
                                             </button>
                                         </form>
-                                        <form action="{{ route('api.borrowings.reject', $pending->id) }}" method="POST" class="d-inline form-reject">
+                                        <form action="{{ route('admin.borrowings.reject', $pending->id) }}" method="POST" class="d-inline form-reject">
                                             @csrf
                                             <button type="submit" class="btn btn-sm fw-bold"
                                                 style="background:var(--comic-red); color:#fff; border:2px solid var(--comic-dark); box-shadow:2px 2px 0 var(--comic-dark); border-radius:0; font-size:0.72rem;"
@@ -575,77 +575,9 @@
     </div>
 </div>
 
-{{-- Row 4: Quick Actions + Keterlambatan ────────────────────────── --}}
+{{-- Row 4: Keterlambatan ────────────────────────── --}}
 <div class="row g-3">
-    <div class="col-lg-5">
-        <div class="card dash-chart-card">
-            <div class="card-header">
-                <div class="card-title">⚡ QUICK ACTIONS</div>
-            </div>
-            <div class="card-body">
-                <div style="display:flex; flex-direction:column; gap:8px;">
-                    <a href="{{ route('admin.books.index') }}" class="quick-action-btn qab-primary">
-                        <span class="qab-icon">📕</span>
-                        <span class="qab-text">
-                            <strong>Kelola Buku</strong>
-                            <small>Tambah, edit, hapus koleksi</small>
-                        </span>
-                        <span class="qab-arrow">→</span>
-                    </a>
-                    <a href="{{ route('admin.members.index') }}" class="quick-action-btn qab-secondary">
-                        <span class="qab-icon">👥</span>
-                        <span class="qab-text">
-                            <strong>Kelola Anggota</strong>
-                            <small>Lihat & edit data member</small>
-                        </span>
-                        <span class="qab-arrow">→</span>
-                    </a>
-                    <a href="{{ route('admin.returns.index') }}" class="quick-action-btn qab-secondary">
-                        <span class="qab-icon">📤</span>
-                        <span class="qab-text">
-                            <strong>Proses Peminjaman</strong>
-                            <small>Pinjam buku untuk anggota</small>
-                        </span>
-                        <span class="qab-arrow">→</span>
-                    </a>
-                    <a href="{{ route('scan.kiosk') }}" class="quick-action-btn qab-accent" target="_blank">
-                        <span class="qab-icon">🖥️</span>
-                        <span class="qab-text">
-                            <strong>Mode Kiosk</strong>
-                            <small>Scan di counter perpustakaan</small>
-                        </span>
-                        <span class="qab-arrow">↗</span>
-                    </a>
-                    <a href="{{ route('admin.returns.index') }}" class="quick-action-btn qab-secondary">
-                        <span class="qab-icon">📥</span>
-                        <span class="qab-text">
-                            <strong>Proses Pengembalian</strong>
-                            <small>Return buku + hitung keterlambatan</small>
-                        </span>
-                        <span class="qab-arrow">→</span>
-                    </a>
-                    <a href="{{ route('admin.returns.scan') }}" class="quick-action-btn qab-accent">
-                        <span class="qab-icon">📷</span>
-                        <span class="qab-text">
-                            <strong>Scan Return</strong>
-                            <small>Scan QR return buku</small>
-                        </span>
-                        <span class="qab-arrow">→</span>
-                    </a>
-                    <a href="{{ route('admin.fines.index') }}" class="quick-action-btn qab-danger">
-                        <span class="qab-icon">⏰</span>
-                        <span class="qab-text">
-                            <strong>Kelola Keterlambatan</strong>
-                            <small>Riwayat keterlambatan peminjaman</small>
-                        </span>
-                        <span class="qab-arrow">→</span>
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-lg-7">
+    <div class="col-12">
         <div class="card dash-chart-card">
             <div class="card-header d-flex align-items-center justify-content-between">
                 <div class="card-title">⏰ RIWAYAT KETERLAMBATAN</div>
@@ -787,11 +719,12 @@ document.addEventListener('DOMContentLoaded', function () {
             data: {
                 datasets: [{
                     data: [
+                        {!! $borrowingStatusCounts['pending'] !!},
                         {!! $borrowingStatusCounts['active'] !!},
                         {!! $borrowingStatusCounts['late'] !!},
                         {!! $borrowingStatusCounts['returned'] !!}
                     ],
-                    backgroundColor: ['#4ECDC4', '#FF3366', '#2ecc71'],
+                    backgroundColor: ['#FFD93D', '#4ECDC4', '#FF3366', '#2ecc71'],
                     borderColor: '#fff',
                     borderWidth: 3,
                 }]

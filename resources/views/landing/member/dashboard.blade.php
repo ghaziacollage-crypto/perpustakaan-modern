@@ -7,8 +7,7 @@
 <nav class="navbar navbar-expand-lg navbar-dark comic-navbar-slider py-2 sticky-top">
     <div class="container position-relative">
         <a class="navbar-brand comic-brand d-flex align-items-center gap-2" href="/">
-            <span class="brand-icon">📚</span>
-            <span class="brand-text fw-black">{{ app_setting('app_name', 'Perpustakaan') }}</span>
+            @include('landing.partials.brand-logo')
         </a>
         <button class="navbar-toggler border-3 border-dark" type="button" data-bs-toggle="collapse" data-bs-target="#navDash">
             <span class="navbar-toggler-icon"></span>

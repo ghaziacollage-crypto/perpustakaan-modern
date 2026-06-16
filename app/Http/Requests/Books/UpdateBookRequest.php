@@ -30,6 +30,7 @@ class UpdateBookRequest extends FormRequest
             'year' => ['nullable', 'integer', 'min:1900', 'max:' . date('Y')],
             'stock' => ['required', 'integer', 'min:0'],
             'rack_location' => ['nullable', 'string', 'max:100'],
+            'synopsis' => ['nullable', 'string'],
             'status' => ['required', Rule::enum(BookStatus::class)],
             'kondisi' => ['required', Rule::enum(BookCondition::class)],
             'cover' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],

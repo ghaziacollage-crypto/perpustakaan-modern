@@ -203,7 +203,7 @@ class BorrowingService
      */
     public function sendReminder(Borrowing $borrowing): bool
     {
-        $borrowing->loadMissing('member');
+        $borrowing->loadMissing(['member', 'details.book']);
         $member = $borrowing->member;
 
         if (! $member?->whatsapp) {
@@ -211,15 +211,17 @@ class BorrowingService
         }
 
         $daysLeft = (int) max(0, $borrowing->due_date->diffInDays(now()));
-        $overdueDays = $borrowing->daysOverdue;
+        $overdueDays = $borrowing->daysOverdue();
 
         if ($overdueDays > 0) {
             $message = "🔔 Halo {$member->name}, buku Anda terlambat {$overdueDays} hari!\n";
             $message .= "Kode: {$borrowing->transaction_code}\n";
+            $message .= 'Buku: '.$borrowing->details->pluck('book.title')->filter()->implode(', ')."\n";
             $message .= 'Segera kembalikan ke perpustakaan.';
         } else {
             $message = "📚 Halo {$member->name}, buku akan jatuh tempo dalam {$daysLeft} hari.\n";
             $message .= "Kode: {$borrowing->transaction_code}\n";
+            $message .= 'Buku: '.$borrowing->details->pluck('book.title')->filter()->implode(', ')."\n";
             $message .= " Jatuh tempo: {$borrowing->due_date->format('d M Y')}";
         }
 

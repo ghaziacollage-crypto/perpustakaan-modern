@@ -20,8 +20,8 @@ class DashboardController extends Controller
     {
         $totalBooks = Book::count();
         $totalMembers = Member::count();
-        $borrowedBooks = Borrowing::whereIn('status', [BorrowingStatus::Active, BorrowingStatus::Late])->count();
-        $overdueBooks = Borrowing::where('status', BorrowingStatus::Late)->count();
+        $borrowedBooks = Borrowing::whereIn('status', [BorrowingStatus::Active->value, BorrowingStatus::Late->value])->count();
+        $overdueBooks = Borrowing::where('status', BorrowingStatus::Late->value)->count();
 
         $recentBorrowings = Borrowing::with('member')
             ->latest()
@@ -30,7 +30,7 @@ class DashboardController extends Controller
 
         // Pending borrowings (waiting for admin approval)
         $pendingBorrowings = Borrowing::with(['member', 'details.book'])
-            ->where('status', BorrowingStatus::Pending)
+            ->where('status', BorrowingStatus::Pending->value)
             ->orderBy('created_at', 'asc')
             ->get();
 
@@ -67,10 +67,10 @@ class DashboardController extends Controller
 
         // Chart 3: Status Peminjaman Saat Ini
         $borrowingStatusCounts = [
-            'pending' => Borrowing::where('status', BorrowingStatus::Pending)->count(),
-            'active' => Borrowing::where('status', BorrowingStatus::Active)->where('due_date', '>=', now()->toDateString())->count(),
-            'late' => Borrowing::where('status', BorrowingStatus::Late)->count(),
-            'returned' => Borrowing::where('status', BorrowingStatus::Returned)->whereDate('return_date', '>=', now()->subMonth()->toDateString())->count(),
+            'pending' => Borrowing::where('status', BorrowingStatus::Pending->value)->count(),
+            'active' => Borrowing::where('status', BorrowingStatus::Active->value)->where('due_date', '>=', now()->toDateString())->count(),
+            'late' => Borrowing::where('status', BorrowingStatus::Late->value)->count(),
+            'returned' => Borrowing::where('status', BorrowingStatus::Returned->value)->whereDate('return_date', '>=', now()->subMonth()->toDateString())->count(),
         ];
 
         return view('admin.dashboard', compact(

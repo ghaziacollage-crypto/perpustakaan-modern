@@ -134,7 +134,7 @@ class BorrowingController extends Controller
 
     public function remind(Borrowing $borrowing): RedirectResponse
     {
-        if ($borrowing->status !== BorrowingStatus::Active) {
+        if (! in_array($borrowing->status, [BorrowingStatus::Active, BorrowingStatus::Late], true)) {
             return redirect()->route('admin.borrowings.index')->with('error', 'Transaksi sudah selesai.');
         }
 

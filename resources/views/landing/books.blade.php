@@ -8,8 +8,7 @@
 <nav class="navbar navbar-expand-lg navbar-dark comic-navbar-slider py-2 sticky-top">
     <div class="container position-relative">
         <a class="navbar-brand comic-brand d-flex align-items-center gap-2" href="/">
-            <span class="brand-icon">📚</span>
-            <span class="brand-text fw-black">{{ app_setting('app_name', 'Aplikasi Perpustakaan') }}</span>
+            @include('landing.partials.brand-logo')
         </a>
         <button class="navbar-toggler border-3 border-dark" type="button" data-bs-toggle="collapse" data-bs-target="#navBooks">
             <span class="navbar-toggler-icon"></span>
@@ -174,11 +173,7 @@
             </div>
             <div class="modal-footer border-dark">
                 <button type="button" class="btn btn-dark fw-black" data-bs-dismiss="modal">TUTUP</button>
-                @auth
-                <a href="{{ route('admin.borrowings.index') }}" class="btn btn-orange fw-black">PINJAM BUKU →</a>
-                @else
-                <a href="{{ route('login') }}" class="btn btn-orange fw-black">🔑 LOGIN UNTUK PINJAM</a>
-                @endauth
+                <a href="{{ route('member.index') }}" class="btn btn-orange fw-black">PINJAM BUKU →</a>
             </div>
         </div>
     </div>
