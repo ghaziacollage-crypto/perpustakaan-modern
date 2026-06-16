@@ -61,7 +61,7 @@ class Borrowing extends Model
      */
     public function activeDetails(): HasMany
     {
-        return $this->details()->where('status', BorrowingDetailStatus::Borrowed);
+        return $this->details()->where('status', BorrowingDetailStatus::Borrowed->value);
     }
 
     /**
@@ -69,7 +69,7 @@ class Borrowing extends Model
      */
     public function returnedDetails(): HasMany
     {
-        return $this->details()->where('status', BorrowingDetailStatus::Returned);
+        return $this->details()->where('status', BorrowingDetailStatus::Returned->value);
     }
 
     public function isOverdue(): bool
@@ -92,12 +92,12 @@ class Borrowing extends Model
 
     public function hasUnreturnedBooks(): bool
     {
-        return $this->details()->where('status', BorrowingDetailStatus::Borrowed)->exists();
+        return $this->details()->where('status', BorrowingDetailStatus::Borrowed->value)->exists();
     }
 
     public function isFullyReturned(): bool
     {
-        return $this->details()->where('status', BorrowingDetailStatus::Borrowed)->count() === 0;
+        return $this->details()->where('status', BorrowingDetailStatus::Borrowed->value)->count() === 0;
     }
 
     /**

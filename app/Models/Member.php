@@ -66,8 +66,8 @@ class Member extends Model
     public function activeBorrowings(): HasMany
     {
         return $this->borrowings()
-            ->whereIn('status', [BorrowingStatus::Active, BorrowingStatus::Late])
-            ->whereHas('details', fn ($q) => $q->where('status', BorrowingDetailStatus::Borrowed));
+            ->whereIn('status', [BorrowingStatus::Active->value, BorrowingStatus::Late->value])
+            ->whereHas('details', fn ($q) => $q->where('status', BorrowingDetailStatus::Borrowed->value));
     }
 
     /**
@@ -86,7 +86,17 @@ class Member extends Model
      */
     public function getRemainingSlotsAttribute(): int
     {
-        return max(0, self::MAX_BORROWINGS - $this->active_borrowings_count);
+        $outstandingCount = BorrowingDetail::whereHas('borrowing', fn ($q) => $q
+            ->where('member_id', $this->id)
+            ->whereIn('status', [
+                BorrowingStatus::Pending->value,
+                BorrowingStatus::Active->value,
+                BorrowingStatus::Late->value,
+            ]))
+            ->where('status', BorrowingDetailStatus::Borrowed->value)
+            ->count();
+
+        return max(0, self::MAX_BORROWINGS - $outstandingCount);
     }
 
     /**

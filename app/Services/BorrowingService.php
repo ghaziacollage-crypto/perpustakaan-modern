@@ -12,8 +12,10 @@ use App\Models\BookReturn;
 use App\Models\Borrowing;
 use App\Models\BorrowingDetail;
 use App\Models\Member;
+use App\Models\Setting;
 use Exception;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -33,6 +35,18 @@ class BorrowingService
      * @throws ValidationException
      */
     public function createBorrowing(Member $member, array $bookIds, ?Carbon $dueDate = null, ?string $notes = null): Borrowing
+    {
+        return $this->createBorrowings($member, $bookIds, $dueDate, $notes)->first();
+    }
+
+    /**
+     * Create one borrowing record for each selected book.
+     *
+     * @return Collection<int, Borrowing>
+     *
+     * @throws ValidationException
+     */
+    public function createBorrowings(Member $member, array $bookIds, ?Carbon $dueDate = null, ?string $notes = null): Collection
     {
         // Validate member first
         $this->validateMember($member);
@@ -72,30 +86,29 @@ class BorrowingService
                 $this->validateBook($book);
             }
 
-            // Final check: total borrowed after this transaction
-            $newTotal = $this->getActiveBorrowingsCount($member) + count($bookIds);
+            // Final check: total borrowed/reserved after this transaction
+            $newTotal = $this->getOutstandingBorrowingsCount($member) + count($bookIds);
             if ($newTotal > self::MAX_BORROWINGS_PER_MEMBER) {
                 throw ValidationException::withMessages([
                     'book_ids' => "Melebihi batas maksimal peminjaman. Sisa slot: {$remainingSlots} buku.",
                 ]);
             }
 
-            // Generate transaction code
-            $transactionCode = $this->generateTransactionCode();
+            $created = collect();
+            $loanDate = now()->toDateString();
+            $resolvedDueDate = ($dueDate ?? now()->addDays($this->getLoanDuration()))->toDateString();
 
-            // Create borrowing record
-            $borrowing = Borrowing::create([
-                'transaction_code' => $transactionCode,
-                'member_id' => $member->id,
-                'user_id' => auth()->id(),
-                'loan_date' => now()->toDateString(),
-                'due_date' => ($dueDate ?? now()->addDays($this->getLoanDuration()))->toDateString(),
-                'status' => BorrowingStatus::Active,
-                'notes' => $notes,
-            ]);
-
-            // Create borrowing details and update stock
             foreach ($books as $book) {
+                $borrowing = Borrowing::create([
+                    'transaction_code' => $this->generateTransactionCode(),
+                    'member_id' => $member->id,
+                    'user_id' => auth()->id(),
+                    'loan_date' => $loanDate,
+                    'due_date' => $resolvedDueDate,
+                    'status' => BorrowingStatus::Active,
+                    'notes' => $notes,
+                ]);
+
                 BorrowingDetail::create([
                     'borrowing_id' => $borrowing->id,
                     'book_id' => $book->id,
@@ -107,12 +120,13 @@ class BorrowingService
                 if ($book->stock <= 0) {
                     $book->update(['status' => BookStatus::Unavailable]);
                 }
+
+                $created->push($borrowing->load(['member', 'details.book']));
             }
 
-            // Send notification
-            $this->sendBorrowedNotification($member, $borrowing);
+            $created->each(fn (Borrowing $borrowing) => $this->sendBorrowedNotification($member, $borrowing));
 
-            return $borrowing->load(['member', 'details.book']);
+            return $created;
         });
     }
 
@@ -125,7 +139,9 @@ class BorrowingService
             $borrowing->load(['details.book', 'member']);
 
             $returnDate = Carbon::parse($data['return_date'] ?? now());
-            $detailIds = $data['detail_ids'] ?? $borrowing->activeDetails()->pluck('id')->toArray();
+            $detailIds = empty($data['detail_ids'])
+                ? $borrowing->activeDetails()->pluck('id')->toArray()
+                : $data['detail_ids'];
             $condition = $data['condition'] ?? null;
             $notes = $data['notes'] ?? null;
 
@@ -248,7 +264,7 @@ class BorrowingService
 
         // Check if book is currently borrowed by someone
         $currentlyBorrowed = BorrowingDetail::where('book_id', $book->id)
-            ->where('status', BorrowingDetailStatus::Borrowed)
+            ->where('status', BorrowingDetailStatus::Borrowed->value)
             ->exists();
 
         if ($currentlyBorrowed) {
@@ -276,7 +292,7 @@ class BorrowingService
         }
 
         $currentlyBorrowed = BorrowingDetail::where('book_id', $book->id)
-            ->where('status', BorrowingDetailStatus::Borrowed)
+            ->where('status', BorrowingDetailStatus::Borrowed->value)
             ->exists();
 
         if ($currentlyBorrowed) {
@@ -314,7 +330,7 @@ class BorrowingService
 
         $activeCount = $this->getActiveBorrowingsCount($member);
         $remainingSlots = $this->getRemainingSlots($member);
-        $activeBorrowings = $member->activeBorrowings()->with(['details' => fn ($q) => $q->with('book')->where('status', BorrowingDetailStatus::Borrowed)])->get();
+        $activeBorrowings = $member->activeBorrowings()->with(['details' => fn ($q) => $q->with('book')->where('status', BorrowingDetailStatus::Borrowed->value)])->get();
 
         return [
             'success' => true,
@@ -356,9 +372,22 @@ class BorrowingService
             ->count();
     }
 
+    public function getOutstandingBorrowingsCount(Member $member): int
+    {
+        return (int) BorrowingDetail::whereHas('borrowing', fn ($q) => $q
+            ->where('member_id', $member->id)
+            ->whereIn('status', [
+                BorrowingStatus::Pending->value,
+                BorrowingStatus::Active->value,
+                BorrowingStatus::Late->value,
+            ]))
+            ->where('status', BorrowingDetailStatus::Borrowed)
+            ->count();
+    }
+
     public function getRemainingSlots(Member $member): int
     {
-        return max(0, self::MAX_BORROWINGS_PER_MEMBER - $this->getActiveBorrowingsCount($member));
+        return max(0, self::MAX_BORROWINGS_PER_MEMBER - $this->getOutstandingBorrowingsCount($member));
     }
 
     public function getLoanDuration(): int
@@ -384,6 +413,10 @@ class BorrowingService
 
         if (! $borrowing) {
             return ['success' => false, 'error' => 'Transaksi tidak ditemukan.'];
+        }
+
+        if (! $borrowing->details->contains(fn (BorrowingDetail $detail) => $detail->status === BorrowingDetailStatus::Borrowed)) {
+            return ['success' => false, 'error' => 'Semua buku pada transaksi ini sudah dikembalikan.'];
         }
 
         $isOverdue = $borrowing->isOverdue();
@@ -457,17 +490,26 @@ class BorrowingService
      */
     public function createPending(Member $member, array $bookIds, ?string $notes = null): Borrowing
     {
-        // Validate member first
+        return $this->createPendingBorrowings($member, $bookIds, $notes)->first();
+    }
+
+    /**
+     * Create one pending borrowing request for each selected book.
+     *
+     * @return Collection<int, Borrowing>
+     *
+     * @throws ValidationException
+     */
+    public function createPendingBorrowings(Member $member, array $bookIds, ?string $notes = null): Collection
+    {
         $this->validateMember($member);
 
-        // Normalize and dedupe book IDs
         $bookIds = array_values(array_unique($bookIds));
 
         if (empty($bookIds)) {
             throw ValidationException::withMessages(['book_ids' => 'Pilih setidaknya satu buku.']);
         }
 
-        // Check remaining slots
         $remainingSlots = $this->getRemainingSlots($member);
         if (count($bookIds) > $remainingSlots) {
             throw ValidationException::withMessages([
@@ -476,7 +518,6 @@ class BorrowingService
         }
 
         return DB::transaction(function () use ($member, $bookIds, $notes) {
-            // Lock books for update to prevent race conditions
             $books = Book::query()
                 ->whereIn('id', $bookIds)
                 ->lockForUpdate()
@@ -490,46 +531,45 @@ class BorrowingService
                 ]);
             }
 
-            // Validate each book
             foreach ($books as $book) {
                 $this->validateBook($book);
             }
 
-            // Final check: total borrowed after this transaction
-            $newTotal = $this->getActiveBorrowingsCount($member) + count($bookIds);
+            $remainingSlots = $this->getRemainingSlots($member);
+            $newTotal = $this->getOutstandingBorrowingsCount($member) + count($bookIds);
             if ($newTotal > self::MAX_BORROWINGS_PER_MEMBER) {
                 throw ValidationException::withMessages([
                     'book_ids' => "Melebihi batas maksimal peminjaman. Sisa slot: {$remainingSlots} buku.",
                 ]);
             }
 
-            // Generate transaction code
-            $transactionCode = $this->generateTransactionCode();
+            $created = collect();
+            $loanDate = now()->toDateString();
+            $dueDate = now()->addDays($this->getLoanDuration())->toDateString();
 
-            // Create borrowing record with status PENDING
-            $borrowing = Borrowing::create([
-                'transaction_code' => $transactionCode,
-                'member_id' => $member->id,
-                'user_id' => null, // No admin yet — approved later
-                'loan_date' => now()->toDateString(),
-                'due_date' => now()->addDays($this->getLoanDuration())->toDateString(),
-                'status' => BorrowingStatus::Pending,
-                'notes' => $notes,
-            ]);
-
-            // Create borrowing details (NO stock decrement yet)
             foreach ($books as $book) {
+                $borrowing = Borrowing::create([
+                    'transaction_code' => $this->generateTransactionCode(),
+                    'member_id' => $member->id,
+                    'user_id' => null,
+                    'loan_date' => $loanDate,
+                    'due_date' => $dueDate,
+                    'status' => BorrowingStatus::Pending,
+                    'notes' => $notes,
+                ]);
+
                 BorrowingDetail::create([
                     'borrowing_id' => $borrowing->id,
                     'book_id' => $book->id,
                     'status' => BorrowingDetailStatus::Borrowed,
                 ]);
+
+                $created->push($borrowing->load(['member', 'details.book']));
             }
 
-            return $borrowing->load(['member', 'details.book']);
+            return $created;
         });
     }
-
     /**
      * Approve a pending borrowing — changes status to Active and decrements stock
      */

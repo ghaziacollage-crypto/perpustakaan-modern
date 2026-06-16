@@ -76,15 +76,17 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::post('books/bulk-qr', [BookController::class, 'bulkGenerateQr'])->name('books.bulk-qr');
     Route::get('books/bulk-qr/print', [BookController::class, 'bulkPrintQr'])->name('books.bulk-qr.print');
     Route::get('books/lookup', [BookController::class, 'lookupByCode'])->name('books.lookup');
+    // Bulk/custom member routes MUST come before resource route to avoid {member} shadowing
+    Route::get('members/bulk-qr', [AdminMemberController::class, 'bulkQrPage'])->name('members.bulk-qr');
+    Route::post('members/bulk-qr-regenerate', [AdminMemberController::class, 'bulkRegenerateQr'])->name('members.bulk-qr-regenerate');
+    Route::get('members/lookup', [AdminMemberController::class, 'lookupByCode'])->name('members.lookup');
+
     Route::resource('members', AdminMemberController::class)->except(['create', 'edit', 'show']);
     Route::get('members/{member}', [AdminMemberController::class, 'show'])->name('members.show');
     Route::get('members/{member}/print', [AdminMemberController::class, 'printCard'])->name('members.print-card');
     Route::post('members/{member}/qr-code', [AdminMemberController::class, 'regenerateQr'])->name('members.regenerate-qr');
-    Route::get('members/bulk-qr', [AdminMemberController::class, 'bulkQrPage'])->name('members.bulk-qr');
-    Route::post('members/bulk-qr-regenerate', [AdminMemberController::class, 'bulkRegenerateQr'])->name('members.bulk-qr-regenerate');
     Route::post('members/{member}/approve', [AdminMemberController::class, 'approve'])->name('members.approve');
     Route::post('members/{member}/reject', [AdminMemberController::class, 'reject'])->name('members.reject');
-    Route::get('members/lookup', [AdminMemberController::class, 'lookupByCode'])->name('members.lookup');
     Route::resource('categories', CategoryController::class)->except(['show']);
     Route::resource('users', UserController::class);
 

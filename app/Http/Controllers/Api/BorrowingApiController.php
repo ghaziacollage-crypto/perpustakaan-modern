@@ -77,12 +77,13 @@ class BorrowingApiController extends Controller
                 ? Carbon::parse($request->input('due_date'))
                 : null;
 
-            $borrowing = $this->borrowingService->createBorrowing(
+            $borrowings = $this->borrowingService->createBorrowings(
                 $member,
                 $request->input('book_ids', []),
                 $dueDate,
                 $request->input('notes')
             );
+            $borrowing = $borrowings->first();
 
             return response()->json([
                 'success' => true,
@@ -90,6 +91,11 @@ class BorrowingApiController extends Controller
                 'data' => [
                     'borrowing_id' => $borrowing->id,
                     'transaction_code' => $borrowing->transaction_code,
+                    'total_borrowings' => $borrowings->count(),
+                    'borrowings' => $borrowings->map(fn (Borrowing $item) => [
+                        'id' => $item->id,
+                        'transaction_code' => $item->transaction_code,
+                    ])->values(),
                 ],
             ], 201);
         } catch (ValidationException $e) {

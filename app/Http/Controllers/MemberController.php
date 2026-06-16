@@ -99,8 +99,11 @@ class MemberController extends Controller
         }
 
         $borrowings = Borrowing::where('member_id', $member->id)
-            ->whereIn('status', [BorrowingStatus::Pending, BorrowingStatus::Active, BorrowingStatus::Late])
-            ->with(['details.book.category'])
+            ->whereIn('status', [BorrowingStatus::Pending->value, BorrowingStatus::Active->value, BorrowingStatus::Late->value])
+            ->whereHas('details', fn ($q) => $q->where('status', BorrowingDetailStatus::Borrowed->value))
+            ->with(['details' => fn ($q) => $q
+                ->where('status', BorrowingDetailStatus::Borrowed->value)
+                ->with('book.category')])
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();
@@ -159,17 +162,22 @@ class MemberController extends Controller
 
         // Stats
         $pendingCount = Borrowing::where('member_id', $member->id)
-            ->where('status', BorrowingStatus::Pending)->count();
+            ->where('status', BorrowingStatus::Pending->value)->count();
 
         $activeBorrowings = Borrowing::where('member_id', $member->id)
-            ->whereIn('status', [BorrowingStatus::Active, BorrowingStatus::Late])
-            ->with(['details.book'])
+            ->whereIn('status', [BorrowingStatus::Active->value, BorrowingStatus::Late->value])
+            ->whereHas('details', fn ($q) => $q->where('status', BorrowingDetailStatus::Borrowed->value))
+            ->with(['details' => fn ($q) => $q
+                ->where('status', BorrowingDetailStatus::Borrowed->value)
+                ->with('book')])
             ->latest()
             ->limit(5)
             ->get();
 
         $lateCount = Borrowing::where('member_id', $member->id)
-            ->where('status', BorrowingStatus::Late)->count();
+            ->where('status', BorrowingStatus::Late->value)
+            ->whereHas('details', fn ($q) => $q->where('status', BorrowingDetailStatus::Borrowed->value))
+            ->count();
 
         return view('landing.member.dashboard', [
             'member' => $member,
@@ -299,10 +307,11 @@ class MemberController extends Controller
         }
 
         try {
-            $borrowing = $this->borrowingService->createPending(
+            $borrowings = $this->borrowingService->createPendingBorrowings(
                 $member,
                 $validated['book_ids']
             );
+            $borrowing = $borrowings->first();
 
             return response()->json([
                 'success' => true,
@@ -311,7 +320,11 @@ class MemberController extends Controller
                     'id' => $borrowing->id,
                     'transaction_code' => $borrowing->transaction_code,
                     'status' => $borrowing->status->value,
-                    'total_books' => $borrowing->details->count(),
+                    'total_books' => $borrowings->count(),
+                    'borrowings' => $borrowings->map(fn (Borrowing $item) => [
+                        'id' => $item->id,
+                        'transaction_code' => $item->transaction_code,
+                    ])->values(),
                 ],
             ]);
         } catch (ValidationException $e) {
@@ -345,7 +358,7 @@ class MemberController extends Controller
 
         $borrowing = Borrowing::where('id', $id)
             ->where('member_id', $member->id)
-            ->where('status', BorrowingStatus::Pending)
+            ->where('status', BorrowingStatus::Pending->value)
             ->first();
 
         if (! $borrowing) {
@@ -385,7 +398,8 @@ class MemberController extends Controller
 
         $borrowing = Borrowing::where('id', $id)
             ->where('member_id', $member->id)
-            ->whereIn('status', [BorrowingStatus::Active, BorrowingStatus::Late])
+            ->whereIn('status', [BorrowingStatus::Active->value, BorrowingStatus::Late->value])
+            ->whereHas('details', fn ($q) => $q->where('status', BorrowingDetailStatus::Borrowed->value))
             ->with(['details.book'])
             ->first();
 

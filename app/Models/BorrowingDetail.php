@@ -38,7 +38,7 @@ class BorrowingDetail extends Model
      */
     public function scopeNotReturned($query)
     {
-        return $query->where('status', BorrowingDetailStatus::Borrowed);
+        return $query->where('status', BorrowingDetailStatus::Borrowed->value);
     }
 
     /**
@@ -46,6 +46,6 @@ class BorrowingDetail extends Model
      */
     public function scopeReturned($query)
     {
-        return $query->where('status', BorrowingDetailStatus::Returned);
+        return $query->where('status', BorrowingDetailStatus::Returned->value);
     }
 }

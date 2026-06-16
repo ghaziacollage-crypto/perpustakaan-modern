@@ -98,39 +98,24 @@ class ScanController extends Controller
             ], 422);
         }
 
-        // Check if member has a pending borrowing already (from today)
-        $existingPending = \App\Models\Borrowing::where('member_id', $member->id)
-            ->where('status', \App\Enums\BorrowingStatus::Pending)
-            ->whereDate('created_at', now()->toDateString())
-            ->with('details.book')
-            ->first();
+        $alreadyAdded = \App\Models\BorrowingDetail::where('book_id', $bookValidation['book']['id'])
+            ->where('status', \App\Enums\BorrowingDetailStatus::Borrowed)
+            ->whereHas('borrowing', fn ($q) => $q
+                ->where('member_id', $member->id)
+                ->whereIn('status', [
+                    \App\Enums\BorrowingStatus::Pending->value,
+                    \App\Enums\BorrowingStatus::Active->value,
+                    \App\Enums\BorrowingStatus::Late->value,
+                ]))
+            ->exists();
 
-        if ($existingPending) {
-            // Check if book is already in this pending borrowing
-            $alreadyAdded = $existingPending->details->contains('book_id', $bookValidation['book']['id']);
-            if ($alreadyAdded) {
-                return response()->json([
-                    'success' => false,
-                    'error' => 'Buku ini sudah ada di daftar pinjam.',
-                ], 422);
-            }
-
-            // Add book to existing pending borrowing
-            \App\Models\BorrowingDetail::create([
-                'borrowing_id' => $existingPending->id,
-                'book_id' => $bookValidation['book']['id'],
-                'status' => \App\Enums\BorrowingDetailStatus::Borrowed,
-            ]);
-
+        if ($alreadyAdded) {
             return response()->json([
-                'success' => true,
-                'message' => 'Buku ditambahkan ke daftar pinjam.',
-                'borrowing' => $existingPending->fresh(['member', 'details.book']),
-                'book' => $bookValidation['book'],
-            ]);
+                'success' => false,
+                'error' => 'Buku ini sudah ada di daftar pinjam.',
+            ], 422);
         }
 
-        // Create new pending borrowing with this book
         try {
             $borrowing = $this->borrowingService->createPending(
                 $member,
@@ -170,12 +155,15 @@ class ScanController extends Controller
             ], 404);
         }
 
-        // Get pending borrowing if exists
-        $pendingBorrowing = \App\Models\Borrowing::where('member_id', $member->id)
+        $pendingBorrowings = \App\Models\Borrowing::where('member_id', $member->id)
             ->where('status', \App\Enums\BorrowingStatus::Pending)
             ->whereDate('created_at', now()->toDateString())
             ->with(['details.book'])
-            ->first();
+            ->latest()
+            ->get();
+
+        $pendingBooks = $pendingBorrowings->flatMap->details;
+        $firstPending = $pendingBorrowings->first();
 
         return response()->json([
             'success' => true,
@@ -187,10 +175,11 @@ class ScanController extends Controller
                 'remaining_slots' => $member->remaining_slots,
                 'active_borrowings_count' => $member->active_borrowings_count,
             ],
-            'pending_borrowing' => $pendingBorrowing ? [
-                'id' => $pendingBorrowing->id,
-                'transaction_code' => $pendingBorrowing->transaction_code,
-                'books' => $pendingBorrowing->details->map(fn ($d) => [
+            'pending_borrowing' => $firstPending ? [
+                'id' => $firstPending->id,
+                'transaction_code' => $firstPending->transaction_code,
+                'transaction_codes' => $pendingBorrowings->pluck('transaction_code')->values(),
+                'books' => $pendingBooks->map(fn ($d) => [
                     'id' => $d->id,
                     'book_id' => $d->book_id,
                     'title' => $d->book->title,
@@ -198,7 +187,7 @@ class ScanController extends Controller
                     'book_code' => $d->book->book_code,
                     'cover' => $d->book->cover_url,
                 ]),
-                'total_books' => $pendingBorrowing->details->count(),
+                'total_books' => $pendingBooks->count(),
             ] : null,
         ]);
     }
@@ -222,19 +211,13 @@ class ScanController extends Controller
             ], 404);
         }
 
-        $pendingBorrowing = \App\Models\Borrowing::where('member_id', $member->id)
-            ->where('status', \App\Enums\BorrowingStatus::Pending)
-            ->whereDate('created_at', now()->toDateString())
+        $detail = \App\Models\BorrowingDetail::where('book_id', $bookId)
+            ->where('status', \App\Enums\BorrowingDetailStatus::Borrowed)
+            ->whereHas('borrowing', fn ($q) => $q
+                ->where('member_id', $member->id)
+                ->where('status', \App\Enums\BorrowingStatus::Pending)
+                ->whereDate('created_at', now()->toDateString()))
             ->first();
-
-        if (! $pendingBorrowing) {
-            return response()->json([
-                'success' => false,
-                'error' => 'Tidak ada peminjaman pending.',
-            ], 404);
-        }
-
-        $detail = $pendingBorrowing->details()->where('book_id', $bookId)->first();
 
         if (! $detail) {
             return response()->json([
@@ -243,23 +226,15 @@ class ScanController extends Controller
             ], 404);
         }
 
+        $pendingBorrowing = $detail->borrowing;
         $detail->delete();
 
-        // If no more books, delete the pending borrowing
-        if ($pendingBorrowing->details()->count() === 0) {
-            $pendingBorrowing->delete();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Buku dihapus. Semua buku dibatalkan.',
-                'borrowing' => null,
-            ]);
-        }
+        $pendingBorrowing->delete();
 
         return response()->json([
             'success' => true,
             'message' => 'Buku dihapus dari daftar.',
-            'borrowing' => $pendingBorrowing->fresh(['member', 'details.book']),
+            'borrowing' => null,
         ]);
     }
 

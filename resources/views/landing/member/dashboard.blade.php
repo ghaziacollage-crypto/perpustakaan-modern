@@ -186,3 +186,37 @@
     </div>
 </footer>
 @endsection
+
+@push('custom-js')
+<script>
+(function () {
+    const memberCode = @json($member->member_code);
+    let activeSignature = @json($activeBorrowings->pluck('id')->sort()->values()->implode(','));
+
+    async function refreshWhenBorrowingsChange() {
+        try {
+            const response = await fetch("{{ route('member.lookup') }}?code=" + encodeURIComponent(memberCode), {
+                headers: { 'Accept': 'application/json' },
+                cache: 'no-store'
+            });
+            const json = await response.json();
+            if (!json.success) return;
+
+            const ids = (json.borrowings || [])
+                .filter(item => item.status === 'active' || item.status === 'late')
+                .map(item => item.id)
+                .sort((a, b) => a - b)
+                .join(',');
+
+            if (ids !== activeSignature) {
+                window.location.reload();
+            }
+        } catch (_) {
+            // Keep the dashboard usable if polling fails.
+        }
+    }
+
+    setInterval(refreshWhenBorrowingsChange, 8000);
+})();
+</script>
+@endpush
