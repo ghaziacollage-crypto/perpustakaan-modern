@@ -114,9 +114,10 @@ body { overflow: hidden; }
                         <div class="mb-3">
                             <label class="form-label fw-bold" style="font-size:0.8rem; font-family:'Fredoka One',cursive; letter-spacing:1px;">KONDISI BUKU</label>
                             <select name="condition" class="form-select" style="border:3px solid var(--comic-dark); border-radius:0; font-weight:800;" required>
-                                <option value="good">✅ Baik</option>
-                                <option value="damaged">⚠️ Rusak Ringan</option>
-                                <option value="lost">❌ Hilang</option>
+                                <option value="Baik">✅ Baik — Normal</option>
+                                <option value="Rusak Ringan">⚠️ Rusak Ringan</option>
+                                <option value="Rusak Berat">❌ Rusak Berat</option>
+                                <option value="Hilang">🚫 Buku Hilang</option>
                             </select>
                         </div>
                         <div class="mb-3">

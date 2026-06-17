@@ -234,6 +234,7 @@
                                             <option value="Baik">✅ Baik — Normal</option>
                                             <option value="Rusak Ringan">⚠️ Rusak Ringan</option>
                                             <option value="Rusak Berat">❌ Rusak Berat</option>
+                                            <option value="Hilang">🚫 Buku Hilang</option>
                                         </select>
                                     </div>
                                     <div class="col-12">

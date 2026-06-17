@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Enums\BookStatus;
+use App\Enums\BookCondition;
 use App\Enums\BorrowingDetailStatus;
 use App\Enums\BorrowingStatus;
 use App\Models\Book;
@@ -144,6 +145,7 @@ class BorrowingService
                 : $data['detail_ids'];
             $condition = $data['condition'] ?? null;
             $notes = $data['notes'] ?? null;
+            $isLost = $this->isLostReturnCondition($condition);
 
             // Check which detail IDs are still borrowable
             $validDetailIds = $borrowing->activeDetails()
@@ -164,12 +166,28 @@ class BorrowingService
                     'condition' => $condition,
                 ]);
 
-            // Restore stock for returned books
+            // Restore stock for returned books, except books marked as lost.
             $returnedDetails = $borrowing->details()->whereIn('id', $validDetailIds)->get();
             foreach ($returnedDetails as $detail) {
+                if ($isLost) {
+                    $detail->book->update([
+                        'status' => BookStatus::Unavailable,
+                        'kondisi' => BookCondition::Hilang,
+                    ]);
+
+                    continue;
+                }
+
                 $detail->book->increment('stock');
+                $detail->book->refresh();
+
                 if ($detail->book->stock > 0) {
-                    $detail->book->update(['status' => BookStatus::Available]);
+                    $detail->book->update([
+                        'status' => BookStatus::Available,
+                        'kondisi' => $this->isDamagedReturnCondition($condition)
+                            ? BookCondition::Rusak
+                            : BookCondition::Normal,
+                    ]);
                 }
             }
 
@@ -196,6 +214,18 @@ class BorrowingService
 
             return $borrowing->refresh();
         });
+    }
+
+    private function isLostReturnCondition(?string $condition): bool
+    {
+        return in_array(strtolower(trim((string) $condition)), ['lost', 'hilang', 'buku hilang'], true);
+    }
+
+    private function isDamagedReturnCondition(?string $condition): bool
+    {
+        $normalized = strtolower(trim((string) $condition));
+
+        return str_contains($normalized, 'damaged') || str_contains($normalized, 'rusak');
     }
 
     /**
