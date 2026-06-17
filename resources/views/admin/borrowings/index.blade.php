@@ -270,10 +270,10 @@
                             @else
                                 <span class="text-muted" style="font-size:0.82rem;">{{ $borrowing->due_date->format('d M Y') }}</span>
                                 <div>
-                                    @php $daysLeft = (int) $borrowing->due_date->diffInDays(now()); @endphp
+                                    @php $daysLeft = max(0, $borrowing->daysUntilDue()); @endphp
                                     <span class="badge {{ $daysLeft <= 2 ? 'badge-light-warning' : 'badge-light-info' }}"
                                         style="font-size:0.65rem; border-radius:0 !important;">
-                                        {{ $daysLeft }} hari lagi
+                                        {{ $borrowing->dueCountdownLabel() }}
                                     </span>
                                 </div>
                             @endif
@@ -286,7 +286,9 @@
                                     'late'    => ['class' => 'badge-light-danger',  'text' => 'Terlambat'],
                                     'returned'=> ['class' => 'badge-light-success', 'text' => 'Kembali'],
                                 ];
-                                $s = $statusMap[$borrowing->status->value] ?? ['class' => 'badge-light-secondary', 'text' => ucfirst($borrowing->status->value)];
+                                $s = $borrowing->isOverdue()
+                                    ? ['class' => 'badge-light-danger', 'text' => 'Terlambat']
+                                    : ($statusMap[$borrowing->status->value] ?? ['class' => 'badge-light-secondary', 'text' => ucfirst($borrowing->status->value)]);
                             @endphp
                             <span class="badge {{ $s['class'] }}" style="font-size:0.72rem; border-radius:0 !important; border:2px solid currentColor !important;">{{ $s['text'] }}</span>
                         </td>
@@ -340,7 +342,7 @@
                                                 <i class="ki-duotone ki-doc-text fs-5" style="color:var(--comic-dark);"></i>
                                                 <span style="font-family:'Fredoka One',cursive; font-size:0.78rem; color:var(--comic-dark); font-weight:700;">Lihat Struk</span>
                                             </a>
-                                            @if($borrowing->status->value === 'active')
+                                            @if(in_array($borrowing->status->value, ['active', 'late'], true))
                                                 <form method="POST" action="{{ route('admin.borrowings.remind', $borrowing) }}">
                                                     @csrf
                                                     <button type="submit" class="aksi-item w-100"

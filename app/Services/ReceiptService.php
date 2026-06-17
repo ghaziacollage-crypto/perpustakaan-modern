@@ -33,10 +33,10 @@ class ReceiptService
         $totalBooks = count($books);
         $dueDate = Carbon::parse($borrowing->due_date);
         $isOverdue = $borrowing->isOverdue();
-        $daysLeft = $isOverdue ? -$borrowing->daysOverdue() : (int) max(0, $dueDate->diffInDays(now()));
+        $daysLeft = $borrowing->daysUntilDue();
         $statusLabel = $borrowing->status->value === 'returned'
             ? 'Dikembalikan'
-            : ($isOverdue ? 'Terlambat '.$borrowing->daysOverdue().' hari' : "{$daysLeft} hari lagi");
+            : ($isOverdue ? 'Terlambat '.$borrowing->daysOverdue().' hari' : $borrowing->dueCountdownLabel());
 
         return [
             'transaction_code' => $borrowing->transaction_code,

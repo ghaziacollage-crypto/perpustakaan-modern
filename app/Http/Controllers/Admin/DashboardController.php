@@ -21,7 +21,11 @@ class DashboardController extends Controller
         $totalBooks = Book::count();
         $totalMembers = Member::count();
         $borrowedBooks = Borrowing::whereIn('status', [BorrowingStatus::Active->value, BorrowingStatus::Late->value])->count();
-        $overdueBooks = Borrowing::where('status', BorrowingStatus::Late->value)->count();
+        $overdueBooks = Borrowing::where('status', BorrowingStatus::Late->value)
+            ->orWhere(fn ($q) => $q
+                ->where('status', BorrowingStatus::Active->value)
+                ->whereDate('due_date', '<', now()->toDateString()))
+            ->count();
 
         $recentBorrowings = Borrowing::with('member')
             ->latest()
@@ -68,8 +72,8 @@ class DashboardController extends Controller
         // Chart 3: Status Peminjaman Saat Ini
         $borrowingStatusCounts = [
             'pending' => Borrowing::where('status', BorrowingStatus::Pending->value)->count(),
-            'active' => Borrowing::where('status', BorrowingStatus::Active->value)->where('due_date', '>=', now()->toDateString())->count(),
-            'late' => Borrowing::where('status', BorrowingStatus::Late->value)->count(),
+            'active' => Borrowing::where('status', BorrowingStatus::Active->value)->whereDate('due_date', '>=', now()->toDateString())->count(),
+            'late' => $overdueBooks,
             'returned' => Borrowing::where('status', BorrowingStatus::Returned->value)->whereDate('return_date', '>=', now()->subMonth()->toDateString())->count(),
         ];
 

@@ -175,7 +175,7 @@ class WhatsAppNotificationController extends Controller
     private function renderTemplate(string $template, Borrowing $borrowing): string
     {
         $books = $this->bookTitles($borrowing);
-        $daysLate = max(0, (int) $borrowing->due_date->diffInDays(now()));
+        $daysLate = $borrowing->daysOverdue();
 
         return strtr($template, [
             '{nama}' => (string) ($borrowing->member?->name ?? '-'),
@@ -196,6 +196,6 @@ class WhatsAppNotificationController extends Controller
 
     private function borrowingType(Borrowing $borrowing): string
     {
-        return $borrowing->due_date->lt(now()->startOfDay()) ? 'overdue' : 'due_today';
+        return $borrowing->daysUntilDue() < 0 ? 'overdue' : 'due_today';
     }
 }

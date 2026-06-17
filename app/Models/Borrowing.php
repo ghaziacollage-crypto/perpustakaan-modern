@@ -78,16 +78,44 @@ class Borrowing extends Model
             return false;
         }
 
-        return $this->status === BorrowingStatus::Active && $this->due_date->lt(now());
+        return in_array($this->status, [BorrowingStatus::Active, BorrowingStatus::Late], true)
+            && $this->hasUnreturnedBooks()
+            && $this->daysUntilDue() < 0;
+    }
+
+    public function daysUntilDue(): int
+    {
+        if (! $this->due_date) {
+            return 0;
+        }
+
+        return (int) now()->startOfDay()->diffInDays($this->due_date->copy()->startOfDay(), false);
     }
 
     public function daysOverdue(): int
     {
-        if (! $this->isOverdue()) {
+        if (! $this->due_date) {
             return 0;
         }
 
-        return (int) $this->due_date->diffInDays(now());
+        $referenceDate = ($this->return_date ?? now())->copy()->startOfDay();
+
+        return max(0, (int) $this->due_date->copy()->startOfDay()->diffInDays($referenceDate, false));
+    }
+
+    public function dueCountdownLabel(): string
+    {
+        $days = $this->daysUntilDue();
+
+        if ($days < 0) {
+            return 'Terlambat '.abs($days).' hari';
+        }
+
+        if ($days === 0) {
+            return 'Jatuh tempo hari ini';
+        }
+
+        return $days.' hari lagi';
     }
 
     public function hasUnreturnedBooks(): bool

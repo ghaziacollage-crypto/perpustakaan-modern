@@ -403,7 +403,9 @@
                                     'late'     => ['bg' => 'var(--comic-red)', 't' => 'TERLAMBAT'],
                                     'returned' => ['bg' => 'var(--comic-green)', 't' => 'KEMBALI'],
                                 ];
-                                $s = $sm[$borrowing->status->value] ?? ['bg' => '#aaa', 't' => strtoupper($borrowing->status->value)];
+                                $s = $borrowing->isOverdue()
+                                    ? ['bg' => 'var(--comic-red)', 't' => 'TERLAMBAT']
+                                    : ($sm[$borrowing->status->value] ?? ['bg' => '#aaa', 't' => strtoupper($borrowing->status->value)]);
                             @endphp
                             <tr>
                                 <td>

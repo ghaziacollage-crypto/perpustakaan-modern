@@ -26,7 +26,7 @@ class BorrowingService
     public const MAX_BORROWINGS_PER_MEMBER = 3;
 
     public function __construct(
-        private readonly ?WhatsAppService $whatsApp = null,
+        private readonly WhatsAppService $whatsApp,
     ) {}
 
     /**
@@ -188,7 +188,7 @@ class BorrowingService
                 // Update borrowing status
                 $borrowing->update([
                     'return_date' => $returnDate->toDateString(),
-                    'status' => $returnDate->gt($borrowing->due_date) ? BorrowingStatus::Late : BorrowingStatus::Returned,
+                    'status' => $returnDate->copy()->startOfDay()->gt($borrowing->due_date->copy()->startOfDay()) ? BorrowingStatus::Late : BorrowingStatus::Returned,
                 ]);
 
                 // No fines - library does not charge penalties
@@ -203,14 +203,22 @@ class BorrowingService
      */
     public function sendReminder(Borrowing $borrowing): bool
     {
+        return $this->sendReminderWithResult($borrowing)['success'];
+    }
+
+    public function sendReminderWithResult(Borrowing $borrowing): array
+    {
         $borrowing->loadMissing(['member', 'details.book']);
         $member = $borrowing->member;
 
         if (! $member?->whatsapp) {
-            return false;
+            return [
+                'success' => false,
+                'message' => 'Nomor WhatsApp anggota belum diisi.',
+            ];
         }
 
-        $daysLeft = (int) max(0, $borrowing->due_date->diffInDays(now()));
+        $daysLeft = max(0, $borrowing->daysUntilDue());
         $overdueDays = $borrowing->daysOverdue();
 
         if ($overdueDays > 0) {
@@ -219,13 +227,15 @@ class BorrowingService
             $message .= 'Buku: '.$borrowing->details->pluck('book.title')->filter()->implode(', ')."\n";
             $message .= 'Segera kembalikan ke perpustakaan.';
         } else {
-            $message = "📚 Halo {$member->name}, buku akan jatuh tempo dalam {$daysLeft} hari.\n";
+            $message = $daysLeft === 0
+                ? "📚 Halo {$member->name}, buku jatuh tempo hari ini.\n"
+                : "📚 Halo {$member->name}, buku akan jatuh tempo dalam {$daysLeft} hari.\n";
             $message .= "Kode: {$borrowing->transaction_code}\n";
             $message .= 'Buku: '.$borrowing->details->pluck('book.title')->filter()->implode(', ')."\n";
             $message .= " Jatuh tempo: {$borrowing->due_date->format('d M Y')}";
         }
 
-        return $this->whatsApp?->sendMessage($member, $member->whatsapp, $message) ?? false;
+        return $this->whatsApp->sendMessageWithResult($member, $member->whatsapp, $message);
     }
 
     // ── Validasi ──────────────────────────────────────────────────────────────
@@ -422,9 +432,7 @@ class BorrowingService
         }
 
         $isOverdue = $borrowing->isOverdue();
-        $daysLeft = $isOverdue
-            ? -$borrowing->daysOverdue()
-            : (int) max(0, $borrowing->due_date->diffInDays(now()));
+        $daysLeft = $borrowing->daysUntilDue();
 
         return [
             'success' => true,
@@ -481,7 +489,7 @@ class BorrowingService
         $message .= "📕 Buku: {$borrowing->details->count()} item\n";
         $message .= 'Silakan cek ke perpustakaan untuk info lebih lanjut.';
 
-        $this->whatsApp?->sendMessage($member, $member->whatsapp, $message);
+        $this->whatsApp->sendMessage($member, $member->whatsapp, $message);
     }
 
     // ── Pending Borrowing (for scan workflow) ────────────────────────────────
@@ -640,6 +648,6 @@ class BorrowingService
         $message .= "📅 Tanggal pengajuan: {$borrowing->created_at->format('d M Y H:i')}\n\n";
         $message .= "Silakan hubungi perpustakaan untuk informasi lebih lanjut.";
 
-        $this->whatsApp?->sendMessage($member, $member->whatsapp, $message);
+        $this->whatsApp->sendMessage($member, $member->whatsapp, $message);
     }
 }

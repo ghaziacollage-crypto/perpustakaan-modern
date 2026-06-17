@@ -61,8 +61,8 @@
                                 <div style="font-family:'Bangers',cursive; font-size:1.8rem; color:var(--comic-red);">{{ $borrowing->daysOverdue() }} Hari</div>
                                 <div style="font-size:0.7rem; font-weight:900; color:#aaa; letter-spacing:2px;">TERLAMBAT</div>
                             @else
-                                <div style="font-family:'Bangers',cursive; font-size:1.8rem; color:var(--comic-blue);">{{ (int) max(0, now()->diffInDays($borrowing->due_date)) }} Hari</div>
-                                <div style="font-size:0.7rem; font-weight:900; color:#aaa; letter-spacing:2px;">SISA HARI</div>
+                                <div style="font-family:'Bangers',cursive; font-size:1.4rem; color:var(--comic-blue);">{{ $borrowing->dueCountdownLabel() }}</div>
+                                <div style="font-size:0.7rem; font-weight:900; color:#aaa; letter-spacing:2px;">SISA WAKTU</div>
                             @endif
                         </div>
                     </div>

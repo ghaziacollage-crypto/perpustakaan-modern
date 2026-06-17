@@ -34,7 +34,16 @@ class BorrowingController extends Controller
 
         $query = Borrowing::with(['member', 'details.book']);
 
-        if ($statusParam && BorrowingStatus::tryFrom($statusParam)) {
+        if ($statusParam === BorrowingStatus::Active->value) {
+            $query->where('status', BorrowingStatus::Active->value)
+                ->whereDate('due_date', '>=', now()->toDateString());
+        } elseif ($statusParam === BorrowingStatus::Late->value) {
+            $query->where(fn ($q) => $q
+                ->where('status', BorrowingStatus::Late->value)
+                ->orWhere(fn ($sub) => $sub
+                    ->where('status', BorrowingStatus::Active->value)
+                    ->whereDate('due_date', '<', now()->toDateString())));
+        } elseif ($statusParam && BorrowingStatus::tryFrom($statusParam)) {
             $query->where('status', $statusParam);
         }
 
@@ -48,10 +57,16 @@ class BorrowingController extends Controller
 
         // Count per status for filter badges
         $totalAll = Borrowing::count();
-        $countPending = Borrowing::where('status', BorrowingStatus::Pending)->count();
-        $countActive = Borrowing::where('status', BorrowingStatus::Active)->count();
-        $countLate = Borrowing::where('status', BorrowingStatus::Late)->count();
-        $countReturned = Borrowing::where('status', BorrowingStatus::Returned)->count();
+        $countPending = Borrowing::where('status', BorrowingStatus::Pending->value)->count();
+        $countActive = Borrowing::where('status', BorrowingStatus::Active->value)
+            ->whereDate('due_date', '>=', now()->toDateString())
+            ->count();
+        $countLate = Borrowing::where('status', BorrowingStatus::Late->value)
+            ->orWhere(fn ($q) => $q
+                ->where('status', BorrowingStatus::Active->value)
+                ->whereDate('due_date', '<', now()->toDateString()))
+            ->count();
+        $countReturned = Borrowing::where('status', BorrowingStatus::Returned->value)->count();
 
         $members = Member::orderBy('name')->get();
         $books = Book::orderBy('title')->get();
@@ -138,10 +153,20 @@ class BorrowingController extends Controller
             return redirect()->route('admin.borrowings.index')->with('error', 'Transaksi sudah selesai.');
         }
 
-        $sent = $this->borrowingService->sendReminder($borrowing);
+        $result = $this->borrowingService->sendReminderWithResult($borrowing);
+        $message = $result['success']
+            ? 'Reminder WhatsApp terkirim.'
+            : 'Gagal mengirim reminder: '.$result['message'];
+
+        if (! $result['success'] && array_key_exists('response', $result)) {
+            $response = is_scalar($result['response'] ?? null)
+                ? (string) $result['response']
+                : json_encode($result['response'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+            $message .= ' HTTP '.($result['status_code'] ?? '-').'. Response: '.str($response ?? '')->limit(180);
+        }
 
         return redirect()->route('admin.borrowings.index')
-            ->with($sent ? 'success' : 'error', $sent ? 'Reminder WhatsApp terkirim.' : 'Gagal mengirim reminder.');
+            ->with($result['success'] ? 'success' : 'error', $message);
     }
 
     /**
